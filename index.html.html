@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام المخالفات المطور | الشرطة العسكرية</title>
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #151d30;
+            --bg-input: #1f2b45;
+            --primary: #ef4444;
+            --primary-hover: #dc2626;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #2d3d5a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px double var(--primary);
+            padding-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 28px;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        .step-title {
+            font-size: 15px;
+            margin-bottom: 12px;
+            color: var(--accent);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.02);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .inputs-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .inputs-row { grid-template-columns: 1fr; }
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+        }
+
+        .section-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: #1e293b;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .tier-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .tier-btn {
+            background: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .tier-btn:hover { background: rgba(239, 68, 68, 0.2); }
+        .tier-btn.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        .violations-list {
+            max-height: 320px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #0d1321;
+        }
+
+        .violation-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .violation-item:hover {
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        .violation-item.selected {
+            background: rgba(239, 68, 68, 0.25);
+            border-right: 4px solid var(--primary);
+        }
+
+        .violation-id {
+            background: #27354f;
+            color: #f8fafc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .result-card {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 10px;
+        }
+
+        .result-item:last-child { border: none; }
+
+        .result-item h4 {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .result-item p {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .penalty-box {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px dashed var(--primary);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .penalty-box h3 {
+            color: var(--primary);
+            font-size: 22px;
+            margin-top: 5px;
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(239, 68, 68, 0.08);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            margin-bottom: 15px;
+        }
+
+        .btn-copy {
+            width: 100%;
+            padding: 12px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-copy:hover { background: #059669; }
+
+        .info-box {
+            background: #111827;
+            border-right: 4px solid #3b82f6;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .info-box ul {
+            margin-right: 15px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>نظام الاستعلام العقابي المطور v2.0</h1>
+        <p>الشرطة العسكرية - MILITARY POLICE SYSTEM</p>
+    </header>
+
+    <div class="main-grid">
+        <div>
+            <!-- إضافة خانات الأسماء والرتبة داخل كرت واحد منسق -->
+            <div class="form-group">
+                <div class="inputs-row" style="margin-bottom: 15px;">
+                    <div>
+                        <div class="step-title">👤 اسم العسكري المخالف:</div>
+                        <input type="text" id="soldierName" placeholder="أدخل اسم العسكري..." oninput="updateSystem()">
+                    </div>
+                    <div>
+                        <div class="step-title">👨‍⚖️ اسم القاضي / المفتش:</div>
+                        <input type="text" id="judgeName" placeholder="أدخل اسم القاضي..." oninput="updateSystem()">
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="step-title">🎖️ رتبة العسكري المخالف:</div>
+                    <select id="rankSelect" onchange="updateSystem()">
+                        <option value="جندي">جندي</option>
+                        <option value="جندي اول">جندي أول</option>
+                        <option value="عريف + وكيل رقيب">عريف + وكيل رقيب</option>
+                        <option value="رقيب + رقيب اول">رقيب + رقيب أول</option>
+                        <option value="رئيس رقباء">رئيس رقباء</option>
+                        <option value="ملازم">ملازم</option>
+                        <option value="ملازم اول">ملازم أول</option>
+                        <option value="نقيب فما فوق">نقيب فما فوق</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-tabs">
+                <button class="tab-btn active" id="tabStandard" onclick="switchTab('standard')">📋 بنود درجات المخالفات (1-7)</button>
+                <button class="tab-btn" id="tabFixed" onclick="switchTab('fixed')">⚖️ قوانين ومخالفات ثابتة</button>
+            </div>
+
+            <div id="tierFiltersContainer">
+                <div class="tier-buttons">
+                    <button class="tier-btn active" onclick="filterTier('all', this)">كل الدرجات</button>
+                    <button class="tier-btn" onclick="filterTier('t1', this)">الدرجة 1</button>
+                    <button class="tier-btn" onclick="filterTier('t2', this)">الدرجة 2</button>
+                    <button class="tier-btn" onclick="filterTier('t3', this)">الدرجة 3</button>
+                    <button class="tier-btn" onclick="filterTier('t4', this)">الدرجة 4</button>
+                    <button class="tier-btn" onclick="filterTier('t5', this)">الدرجة 5</button>
+                    <button class="tier-btn" onclick="filterTier('t6', this)">الدرجة 6</button>
+                    <button class="tier-btn" onclick="filterTier('t7', this)">الدرجة 7</button>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="searchInput" placeholder="🔍 بحث سريع في نصوص البنود والمخالفات..." oninput="updateSystem()">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="step-title" id="listTitle">📋 اختر البند لتطبيق العقوبة فوراً:</div>
+                <div class="violations-list" id="violationsList"></div>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div class="switch-container">
+                <input type="checkbox" id="doubleCheck" onchange="updateSystem()" style="width: auto; cursor: pointer;">
+                <label for="doubleCheck" style="font-weight: bold; color: var(--primary); cursor: pointer;">⚠️ المخالفة مكررة (تدبيل العقوبة والغرابة ×2)</label>
+            </div>
+
+            <div class="result-card">
+                <div class="result-item">
+                    <h4>اسم العسكري المخالف:</h4>
+                    <p id="resSoldier" style="color: #60a5fa;">-</p>
+                </div>
+                <div class="result-item">
+                    <h4>المخالفة المسجلة:</h4>
+                    <p id="resText" style="color: #fff;">يرجى تحديد مخالفة من القائمة...</p>
+                </div>
+                <div class="result-item">
+                    <h4>رقم البند / التصنيف:</h4>
+                    <p id="resId" style="color: var(--accent);">-</p>
+                </div>
+                <div class="result-item">
+                    <h4>الرتبة المستهدفة:</h4>
+                    <p id="resRank" style="color: #60a5fa;">-</p>
+                </div>
+                <div class="penalty-box">
+                    <h4>العقوبة النهائية المستحقة:</h4>
+                    <h3 id="resPenalty">-</h3>
+                </div>
+                <div class="result-item" style="margin-top: 15px;">
+                    <h4>اسم القاضي / المفتش:</h4>
+                    <p id="resJudge" style="color: #60a5fa;">-</p>
+                </div>
+                <button class="btn-copy" style="margin-top: 15px;" onclick="copyToDiscord()">📋 نسخ التقرير للديسكورد</button>
+            </div>
+
+            <div class="info-box">
+                <strong style="color: var(--accent);">📌 تنويهات هامة من القيادة:</strong>
+                <ul>
+                    <li>في حال عدم توفر البند، تتم المحاسبة **تقديرياً**.</li>
+                    <li>تسلم جميع الغرامات المقبوضة إلى **الشرطة العسكرية**.</li>
+                    <li>لا يزال أي تحذير إلا بعد انتهاء المدة ودفع الغرامة كاملة.</li>
+                    <li>في حال عدم حضور المحكمة خلال 24 ساعة وكان التبرير مقنعاً، **يُزال نصف العقوبة فقط**.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const standardViolations = [
+    // الدرجة الاولى
+    { id: "1-1", tier: "t1", tierName: "الدرجة الأولى", text: "التصدي للمجرمين بشكل خاطئ" },
+    { id: "1-2", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين نقاط التفتيش" },
+    { id: "1-3", tier: "t1", tierName: "الدرجة الأولى", text: "إبقاء المجرم في الدورية والتوجه لحالات أخرى" },
+    { id: "1-4", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين الميدان بشكل عام" },
+    { id: "1-5", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين المصادرات بشكل كامل" },
+    { id: "1-6", tier: "t1", tierName: "الدرجة الأولى", text: "عدم تسليم الممنوعات" },
+    { id: "1-7", tier: "t1", tierName: "الدرجة الأولى", text: "عدم تغيير المسمى الميداني" },
+    { id: "1-8", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفه قوانين ( كود 7 )" },
+    { id: "1-9", tier: "t1", tierName: "الدرجة الأولى", text: "دخول المركز بالمركبة الشخصية" },
+    { id: "1-10", tier: "t1", tierName: "الدرجة الأولى", text: "التفاعل مع برقية رسميه" },
+    { id: "1-11", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين المشتركه" },
+    { id: "1-12", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين المشتركه المكررة" },
+
+    // الدرجة الثانية
+    { id: "2-1", tier: "t2", tierName: "الدرجة الثانية", text: "تخطي المراجع" },
+    { id: "2-2", tier: "t2", tierName: "الدرجة الثانية", text: "دخول موجات غير معتمدة" },
+    { id: "2-3", tier: "t2", tierName: "الدرجة الثانية", text: "عدم التجاوب , إهمال التوجيهات في الراديو" },
+    { id: "2-4", tier: "t2", tierName: "الدرجة الثانية", text: "عدم الإلتزام بالعهدة العسكرية" },
+    { id: "2-5", tier: "t2", tierName: "الدرجة الثانية", text: "سجن شخص ( 20 شهر ) بدون اذن ضابط" },
+    { id: "2-6", tier: "t2", tierName: "الدرجة الثانية", text: "عدم الاتزام بالمظهر العسكري{ حلاقة الشعر-الوشوم -الخ..}" },
+    { id: "2-7", tier: "t2", tierName: "الدرجة الثانية", text: "عدم الالتزام بالأنظمة المرورية" },
+    { id: "2-8", tier: "t2", tierName: "الدرجة الثانية", text: "وضع حواجز او كشك بدون اذن" },
+    { id: "2-9", tier: "t2", tierName: "الدرجة الثانية", text: "تكرير طلب رتبة عالية بلا مبرر مقنع" },
+    { id: "2-10", tier: "t2", tierName: "الدرجة الثانية", text: "مخالفة قوانين تسجيل الدخول والخروج والبقاء في المركز" },
+    { id: "2-11", tier: "t2", tierName: "الدرجة الثانية", text: "استخدام المنشن بشكل خاطئ" },
+    { id: "2-12", tier: "t2", tierName: "الدرجة الثانية", text: "التأخر عن الاصطفاف" },
+    { id: "2-13", tier: "t2", tierName: "الدرجة الثانية", text: "مخالفه قوانين السجلات الجنائيه" },
+    { id: "2-15", tier: "t2", tierName: "الدرجة الثانية", text: "عدم الإلتزام ببرتوكولات الراديو" },
+    { id: "2-16", tier: "t2", tierName: "الدرجة الثانية", text: "عدم ربط الفايف ام بالدسكورد" },
+    { id: "2-17", tier: "t2", tierName: "الدرجة الثانية", text: "اعطاء مخالفات غير مستحقه" },
+    { id: "2-18", tier: "t2", tierName: "الدرجة الثانية", text: "مخالفة قوانين رسائل حرس الحدود" },
+    { id: "2-19", tier: "t2", tierName: "الدرجة الثانية", text: "عدم سحب سلاح مستخدم" },
+    { id: "2-20", tier: "t2", tierName: "الدرجة الثانية", text: "رفع نداء استغاثه داخل نداء مسبق" },
+    { id: "2-21", tier: "t2", tierName: "الدرجة الثانية", text: "ارسال نموذج خاطئ" },
+    { id: "2-22", tier: "t2", tierName: "الدرجة الثانية", text: "تجاوز السرعه المحدده داخل الميناء" },
+
+    // الدرجة الثالثة
+    { id: "3-1", tier: "t3", tierName: "الدرجة الثالثة", text: "عدم التقيد بقواعد المطارادات" },
+    { id: "3-2", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفة قوانين الإعتقال أو التعامل مع المتهمين" },
+    { id: "3-3", tier: "t3", tierName: "الدرجة الثالثة", text: "سوء التعامل مع الحالات" },
+    { id: "3-4", tier: "t3", tierName: "الدرجة الثالثة", text: "الانسحاب قبل انتهاء الحاله" },
+    { id: "3-5", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفة قوانين التوجه إلى الحالات" },
+    { id: "3-6", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفة تعاميم أو قوانين حرس الحدود المحدثة" },
+    { id: "3-7", tier: "t3", tierName: "الدرجة الثالثة", text: "دخول موجه الرقابة دون اذن" },
+    { id: "3-8", tier: "t3", tierName: "الدرجة الثالثة", text: "التهرب من إستلام مركز العمليات او احد البوابات" },
+    { id: "3-9", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفه قوانين العمليات" },
+    { id: "3-10", tier: "t3", tierName: "الدرجة الثالثة", text: "التدخل في مهمات أو صلاحيات الغير بأي شكل من الأشكال" },
+    { id: "3-11", tier: "t3", tierName: "الدرجة الثالثة", text: "تسجيل دخول لمباشرة حالة ثم تسجيل خروجه" },
+    { id: "3-12", tier: "t3", tierName: "الدرجة الثالثة", text: "إضافة شروط الهروب الأمن غيرر المحددة ضمن التعميمات" },
+    { id: "3-13", tier: "t3", tierName: "الدرجة الثالثة", text: "طلق النار بطريقه غير نظاميه" },
+    { id: "3-14", tier: "t3", tierName: "الدرجة الثالثة", text: "تحرير الرهائن بدون اذن او الفشل في تحريرها" },
+    { id: "3-15", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفه قوانين المركبات" },
+    { id: "3-16", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفه قوانين السجن ( سجن غير صحيح )" },
+    { id: "3-17", tier: "t3", tierName: "الدرجة الثالثة", text: "ادخال حمولة مخالفة" },
+    { id: "3-18", tier: "t3", tierName: "الدرجة الثالثة", text: "ادخال حموله غير واقعيه" },
+    { id: "3-19", tier: "t3", tierName: "الدرجة الثالثة", text: "كشف هويه البحث الجنائي" },
+    { id: "3-20", tier: "t3", tierName: "الدرجة الثالثة", text: "الانسحاب من موقع التوجيه بدون اذن" },
+    { id: "3-21", tier: "t3", tierName: "الدرجة الثالثة", text: "عدم الإلتزام بضوابط التفاوض" },
+    { id: "3-22", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفة قوانين الاجازات" },
+    { id: "3-23", tier: "t3", tierName: "الدرجة الثالثة", text: "اسقاط مواطن اعزل" },
+
+    // الدرجة الرابعة
+    { id: "4-1", tier: "t4", tierName: "الدرجة الرابعة", text: "العبث بالعهدة العسكرية" },
+    { id: "4-2", tier: "t4", tierName: "الدرجة الرابعة", text: "التقصير في العمل الأداري أو الميداني" },
+    { id: "4-3", tier: "t4", tierName: "الدرجة الرابعة", text: "عدم الاتزام بالزي العسكري المحدد لرتبتك" },
+    { id: "4-4", tier: "t4", tierName: "الدرجة الرابعة", text: "عدم الجدية اثناء الداوم كعسكري" },
+    { id: "4-5", tier: "t4", tierName: "الدرجة الرابعة", text: "استخدام السلطة بغير حق" },
+    { id: "4-6", tier: "t4", tierName: "الدرجة الرابعة", text: "إهمال الرتب العليا للميدان" },
+    { id: "4-7", tier: "t4", tierName: "الدرجة الرابعة", text: "الاساءه لـ الشرطة العسكريه باي شكل من الاشكال" },
+    { id: "4-8", tier: "t4", tierName: "الدرجة الرابعة", text: "عدم احترام المواطنين" },
+    { id: "4-9", tier: "t4", tierName: "الدرجة الرابعة", text: "اهمال موقع المباشره" },
+    { id: "4-10", tier: "t4", tierName: "الدرجة الرابعة", text: "سجن شخص حكم عسكري" },
+    { id: "4-11", tier: "t4", tierName: "الدرجة الرابعة", text: "سحب اسلحة دون وجه حق" },
+
+    // الدرجة الخامسة
+    { id: "5-1", tier: "t5", tierName: "الدرجة الخامسة", text: "المناقشة أمام الأفراد" },
+    { id: "5-2", tier: "t5", tierName: "الدرجة الخامسة", text: "الكذب على المسؤولين" },
+    { id: "5-3", tier: "t5", tierName: "الدرجة الخامسة", text: "المجادلة في الموجه" },
+    { id: "5-4", tier: "t5", tierName: "الدرجة الخامسة", text: "مخالفة أمر مباشر او عدم انصياع لـ الأوامر" },
+    { id: "5-5", tier: "t5", tierName: "الدرجة الخامسة", text: "تخريب بالرتبة عسكرية" },
+    { id: "5-6", tier: "t5", tierName: "الدرجة الخامسة", text: "التلفظ على مواطن او الاساءه له باي شكل من الاشكال" },
+    { id: "5-7", tier: "t5", tierName: "الدرجة الخامسة", text: "مخالفة قوانين المصادرة سواء بالأخذ او بالتخزين" },
+    { id: "5-8", tier: "t5", tierName: "الدرجة الخامسة", text: "عدم تمثيل العسكري بصورة صحيحة بأي شكل من الأشكال" },
+    { id: "5-9", tier: "t5", tierName: "الدرجة الخامسة", text: "استخدام السلطة او الوظيفه للمصلحه الشخصيه" },
+    { id: "5-10", tier: "t5", tierName: "الدرجة الخامسة", text: "الاساءه لقطاعات اخرى باي شكل من الاشكال" },
+    { id: "5-11", tier: "t5", tierName: "الدرجة الخامسة", text: "التلاعب بالساعات والتأفيك" },
+    { id: "5-12", tier: "t5", tierName: "الدرجة الخامسة", text: "استخدام السنايبر بشكل خاطئ" },
+
+    // الدرجة السادسة
+    { id: "6-1", tier: "t6", tierName: "الدرجة السادسة", text: "الترصد لزملائك بغاية الحقد سواء بسبب او بغير سبب" },
+    { id: "6-2", tier: "t6", tierName: "الدرجة السادسة", text: "عدم احترام الرتب العليا" },
+    { id: "6-3", tier: "t6", tierName: "الدرجة السادسة", text: "تخريب برتبة عسكرية" },
+    { id: "6-4", tier: "t6", tierName: "الدرجة السادسة", text: "الإساءة لحرس الحدود سواء خارج او داخل الرول بلاي أو بأي شكل من الأشكال" },
+    { id: "6-5", tier: "t6", tierName: "الدرجة السادسة", text: "تسريب معلومات او نسخ جداول حرس الحدود و نقلها الى سيرفرات اخرى" },
+    { id: "6-6", tier: "t6", tierName: "الدرجة السادسة", text: "فساد عسكري" },
+    { id: "6-7", tier: "t6", tierName: "الدرجة السادسة", text: "تزوير رتب" },
+    { id: "6-8", tier: "t6", tierName: "الدرجة السادسة", text: "الخروج من سيرفر الدسكورد بغرض اخفاء الرتب" },
+
+    // الدرجة السابعة
+    { id: "7-1", tier: "t7", tierName: "الدرجة السابعة", text: "عدم تنفيذ الجزاء الذي عليك" },
+    { id: "7-2", tier: "t7", tierName: "الدرجة السابعة", text: "عدم تواجد لفترة طويلة" },
+    { id: "7-3", tier: "t7", tierName: "الدرجة السابعة", text: "عدم الانصياع لاوامر القادة" },
+    { id: "7-4", tier: "t7", tierName: "الدرجة السابعة", text: "التهرب الوظيفي" },
+    { id: "7-5", tier: "t7", tierName: "الدرجة السابعة", text: "عدم احترام القيادة" }
+];
+
+const penaltyMatrix = {
+    "جندي": { t1: "انذار شفوي + 100 الف", t2: "انذار شفوي + 150 الف", t3: "شفهي ثاني + 400 الف", t4: "شفهي اخير + 500 الف", t5: "وظيفي اول + 500 الف", t6: "وظيفي ثاني + مليون", t7: "تقديرية تصل الى الفصل من الخدمة" },
+    "جندي اول": { t1: "انذار شفوي + 150 الف", t2: "شفهي ثاني + 200 الف", t3: "شفهي اخير + 300 الف", t4: "وظيفي اول + 500 الف", t5: "وظيفي ثاني + 700 الف", t6: "وظيفي اخير + مليون", t7: "تقديرية تصل الى الفصل من الخدمة" },
+    "عريف + وكيل رقيب": { t1: "انذار شفوي + 250 الف", t2: "شفوي ثاني + 300 الف", t3: "شفوي اخير + 350 الف", t4: "وظيفي اول + 500 الف", t5: "وظيفي اخير + مليون", t6: "وظيفي اخير + مليونين", t7: "تقديرية تصل الى الفصل من الخدمة" },
+    "رقيب + رقيب اول": { t1: "انذار شفوي + 300 الف", t2: "شفهي ثاني + 350 الف", t3: "شفوي اخير + 400 الف", t4: "وظيفي ثاني + مليون", t5: "وظيفي اخير + مليون", t6: "وظيفي اخير + مليونين", t7: "تقديرية تصل الى الفصل من الخدمة" },
+    "رئيس رقباء": { t1: "شفهي ثاني + 400 الف", t2: "شفهي اخير + 500 الف", t3: "وظيفي اول + 500 الف", t4: "وظيفي اخير + مليون", t5: "وظيفي اخير + مليون", t6: "وظيفي اخير + مليونين", t7: "تقديرية تصل الى الفصل من الخدمة" },
+    "ملازم": { t1: "شفهي اخير + 500 الف", t2: "وظيفي اول + 500 الف", t3: "وظيفي ثاني + 700 الف", t4: "وظيفي اخير + مليون", t5: "وظيفي اخير + مليونين", t6: "وظيفي اخير + مليونين", t7: "تقديرية تصل الى الفصل من الخدمة" },
+    "ملازم اول": { t1: "شفهي اخير + 500 الف", t2: "وظيفي اول + 700 الف", t3: "وظيفي ثاني + مليون", t4: "وظيفي اخير + مليونين", t5: "تقديري ويُرفع للقيادة", t6: "تقديري ويُرفع للقيادة", t7: "تقديرية تصل الى الفصل من الخدمة" },
+    "نقيب فما فوق": { t1: "تقديري ويُرفع للقيادة", t2: "تقديري ويُرفع للقيادة", t3: "تقديري ويُرفع للقيادة", t4: "تقديري ويُرفع للقيادة", t5: "تقديري ويُرفع للقيادة", t6: "تقديري ويُرفع للقيادة", t7: "تقديرية تصل الى الفصل من الخدمة" }
+};
+
+const fixedViolations = [
+    { type: "fixed_1", id: "ثابت", text: "اعتراض على حكم صحيح", calc: (rank) => "انذار وظيفي أول + غرامه 500 الف" },
+    { type: "fixed_2", id: "ثابت", text: "عدم حضور استدعاء المحكمة بعد مرور 24 ساعه", calc: (rank) => "انذار شفهي + غرامه 500 الف + عقوبة المخالفه" },
+    { type: "fixed_3", id: "ثابت", text: "عدم حضور الاجتماع الدوري للقطاع", calc: (rank) => "تقديري من مسؤول الاجتماع" },
+    { type: "fixed_prison", id: "ثابت", text: "سجن مواطن لاي سبب غير exiting في اقل من 4:40 دقيقة", calc: (rank) => {
+        if (rank === "جندي" || rank === "جندي اول") return "شفهي اخير + 300 الف غرامة";
+        if (rank === "ملازم" || rank === "ملازم اول" || rank === "نقيب فما فوق") return "وظيفي ثاني + 1 مليون غرامة";
+        return "وظيفي اول + 300 الف غرامة";
+    }},
+    { type: "fixed_car", id: "ثابت", text: "إهمال المركبة العسكرية الميدانية", calc: (rank) => {
+        if (rank === "جندي" || rank === "جندي اول" || rank === "عريف + وكيل رقيب") return "غرامه 150 الف";
+        if (rank === "رقيب + رقيب اول" || rank === "رئيس رقباء") return "غرامه 250 الف";
+        return "غرامه 500 الف";
+    }}
+];
+
+let currentMode = 'standard';
+let currentTierFilter = 'all';
+let selectedItem = null;
+
+function switchTab(mode) {
+    currentMode = mode;
+    selectedItem = null;
+    document.getElementById('tabStandard').classList.toggle('active', mode === 'standard');
+    document.getElementById('tabFixed').classList.toggle('active', mode === 'fixed');
+    document.getElementById('tierFiltersContainer').style.display = (mode === 'standard') ? 'block' : 'none';
+    document.getElementById('listTitle').innerText = (mode === 'standard') ? '📋 اختر البند لتطبيق العقوبة فوراً:' : '⚖️ اختر المخالفة الثابتة:';
+    
+    updateSystem();
+}
+
+function filterTier(tier, btn) {
+    currentTierFilter = tier;
+    document.querySelectorAll('.tier-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updateSystem();
+}
+
+function updateSystem() {
+    const listContainer = document.getElementById('violationsList');
+    listContainer.innerHTML = '';
+    
+    // ربط مدخلات النص باللوحة الجانبية مباشرة
+    const solInput = document.getElementById('soldierName').value.trim();
+    const jdgInput = document.getElementById('judgeName').value.trim();
+    
+    document.getElementById('resSoldier').innerText = solInput ? solInput : "لم يحدد بعد";
+    document.getElementById('resJudge').innerText = jdgInput ? jdgInput : "لم يحدد بعد";
+    
+    let dataSource = (currentMode === 'standard') ? standardViolations : fixedViolations;
+    
+    if (currentMode === 'standard') {
+        const searchTxt = document.getElementById('searchInput').value.trim().toLowerCase();
+        if (currentTierFilter !== 'all') {
+            dataSource = dataSource.filter(v => v.tier === currentTierFilter);
+        }
+        if (searchTxt !== '') {
+            dataSource = dataSource.filter(v => v.text.toLowerCase().includes(searchTxt) || v.id.includes(searchTxt));
+        }
+    }
+
+    if(dataSource.length === 0) {
+        listContainer.innerHTML = '<div style="padding:15px; color:var(--text-muted); text-align:center;">لا توجد نتائج مطابقة للبحث.</div>';
+        return;
+    }
+
+    dataSource.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'violation-item' + (selectedItem && selectedItem.text === item.text ? ' selected' : '');
+        div.onclick = () => {
+            selectedItem = item;
+            updateSystem();
+        };
+        
+        let label = (currentMode === 'standard') ? `بند ${item.id} (${item.tierName})` : 'مخالفة ثابتة';
+        div.innerHTML = `<span>${item.text}</span> <span class="violation-id">${label}</span>`;
+        listContainer.appendChild(div);
+    });
+
+    if (selectedItem) {
+        const currentRank = document.getElementById('rankSelect').value;
+        const isDoubled = document.getElementById('doubleCheck').checked;
+        let penaltyText = "";
+
+        if (currentMode === 'standard') {
+            penaltyText = penaltyMatrix[currentRank][selectedItem.tier];
+            
+            // شرط ذكي: إضافة "كسر رتبة" تلقائياً إذا كانت المخالفة من الدرجة الخامسة أو السادسة
+            if (selectedItem.tier === 't5' || selectedItem.tier === 't6') {
+                penaltyText += " + كسر رتبة";
+            }
+        } else {
+            penaltyText = selectedItem.calc(currentRank);
+        }
+
+        if (isDoubled) {
+            penaltyText = "⚠️ [عقوبة مضاعفة للتكرار]: " + penaltyText + " [تُدبل العقوبة والغرابة ×2]";
+        }
+
+        document.getElementById('resText').innerText = selectedItem.text;
+        document.getElementById('resId').innerText = (currentMode === 'standard') ? `بند (${selectedItem.id}) - ${selectedItem.tierName}` : "قوانين مخالفات ثابتة";
+        document.getElementById('resRank').innerText = currentRank;
+        document.getElementById('resPenalty').innerText = penaltyText;
+    } else {
+        document.getElementById('resText').innerText = "يرجى تحديد مخالفة من القائمة...";
+        document.getElementById('resId').innerText = "-";
+        document.getElementById('resRank').innerText = "-";
+        document.getElementById('resPenalty').innerText = "-";
+    }
+}
+
+function copyToDiscord() {
+    if (!selectedItem) {
+        alert("🚨 يرجى اختيار مخالفة أولاً قبل النسخ!");
+        return;
+    }
+    
+    const soldier = document.getElementById('resSoldier').innerText;
+    const rank = document.getElementById('resRank').innerText;
+    const bid = document.getElementById('resId').innerText;
+    const txt = document.getElementById('resText').innerText;
+    const pnl = document.getElementById('resPenalty').innerText;
+    const judge = document.getElementById('resJudge').innerText;
+
+    const discordFormat = `**🚨 [ تقرير مخالفة عسكرية صادر عن الشرطة العسكرية ] 🚨**\n` +
+                          `**👤 اسم العسكري المخالف:** ${soldier}\n` +
+                          `**🎖️ رتبة المخالف:** ${rank}\n` +
+                          `**📋 تصنيف البند:** ${bid}\n` +
+                          `**⚖️ نص المخالفة:** ${txt}\n` +
+                          `**💰 العقوبة المطبقة ميدانياً:** ${pnl}\n` +
+                          `**👨‍⚖️ اسم القاضي / المفتش:** ${judge}\n` +
+                          `**⏰ التاريخ:** ${new Date().toLocaleDateString('ar-EG')}\n` +
+                          `====================================\n` +
+                          `**الاعتماد  : @رئـــاســة الــشــرطـة الــعــسـكـريـة **`;
+
+    navigator.clipboard.writeText(discordFormat).then(() => {
+        alert("✅ تم نسخ التقرير المطور بتنسيق الديسكورد بنجاح!");
+    });
+}
+
+updateSystem();
+</script>
+
+</body>
+</html>

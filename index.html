@@ -482,15 +482,14 @@
                 </tr>
             </thead>
             <tbody id="recordsTableBody">
-                <!-- تعبأ البيانات تلقائياً من سيرفر جوجل -->
-            </tbody>
+                </tbody>
         </table>
     </div>
 </div>
 
 <script>
-// الرابط المستخرج سحابياً من Apps Script الخاص بك مباشرة
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfybyOw_BAYklX7GPn-xEGGVpIITwuzpAh3AlnNAAhL3vjnJjqaX1KILHxHz1ohzxcT-1Aww/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOw_BAYkIX7GPn-xEGGVpIITwuzpAh3AlnNAAhL3vjnJjqaX1KlLHxHz1ohzxcT-1Aww/exec";
+
 const standardViolations = [
     { id: "1-1", tier: "t1", tierName: "الدرجة الأولى", text: "التصدي للمجرمين بشكل خاطئ" },
     { id: "1-2", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين نقاط التفتيش" },
@@ -538,7 +537,7 @@ const standardViolations = [
     { id: "3-11", tier: "t3", tierName: "الدرجة الثالثة", text: "تسجيل دخول لمباشرة حالة ثم تسجيل خروجه" },
     { id: "3-12", tier: "t3", tierName: "الدرجة الثالثة", text: "إضافة شروط الهروب الأمن غيرر المحددة ضمن التعميمات" },
     { id: "3-13", tier: "t3", tierName: "الدرجة الثالثة", text: "طلق النار بطريقه غير نظاميه" },
-    { id: "3-14", tier: "t3", tierName: "الدرجة الثالثة", text: "تحرير الرهائن بدون اذن او الفشل in تحريرها" },
+    { id: "3-14", tier: "t3", tierName: "الدرجة الثالثة", text: "تحرير الرهائن بدون اذن او الفشل في تحريرها" },
     { id: "3-15", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفه قوانين المركبات" },
     { id: "3-16", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفه قوانين السجن ( سجن غير صحيح )" },
     { id: "3-17", tier: "t3", tierName: "الدرجة الثالثة", text: "ادخال حمولة مخالفة" },
@@ -732,7 +731,7 @@ function copyToDiscord() {
     });
 }
 
-// =================== برمجيات الربط السحابي بجدول جوجل المحدثة ===================
+// =================== نظام الحفظ والربط السحابي المطور (GET Method البند الآمن) ===================
 
 function saveToSystemRecords() {
     const soldier = document.getElementById('soldierName').value.trim();
@@ -740,7 +739,7 @@ function saveToSystemRecords() {
     const durationDays = parseInt(document.getElementById('alertDuration').value);
     
     if (!soldier || !selectedItem) {
-        alert("🚨 خطأ: يجب إدخال اسم العسكري واختيار بند المخالفة أولاً لحفظ الإنذار!");
+        alert("🚨 خطأ: يجب إدخال اسم العسكري واختيار بند المخالفة من القائمة أولاً لحفظ الإنذار!");
         return;
     }
     
@@ -751,29 +750,34 @@ function saveToSystemRecords() {
     const expiryDate = new Date();
     expiryDate.setDate(registrationDate.getDate() + durationDays);
     
-    const recordObj = {
-        id: Date.now(),
-        soldier: soldier,
-        rank: rank,
-        classification: itemClassification,
-        penalty: penalty,
-        regDate: registrationDate.toLocaleDateString('ar-EG'),
-        expDate: expiryDate.toLocaleDateString('ar-EG')
-    };
+    const regDateStr = registrationDate.toLocaleDateString('ar-EG');
+    const expDateStr = expiryDate.toLocaleDateString('ar-EG');
+    const recordId = Date.now();
     
-    // إرسال البيانات فوراً إلى جدول جوجل السحابي الموثق
-    fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(recordObj)
-    }).then(() => {
-        alert(`✅ تم إدراج العسكري (${soldier}) في السجل السحابي لجوجل بنظام أمن المنشآت بنجاح!`);
-        document.getElementById('soldierName').value = "";
-        selectedItem = null;
-        updateSystem();
-        loadSystemRecords(); // تحديث الجدول الميداني فوراً
-    }).catch(err => alert("🚨 فشل الاتصال بالسيرفر السحابي: " + err));
+    // بناء رابط إرسال آمن لتجنب قيود الـ CORS والمتصفحات نهائياً
+    const secureUrl = `${GOOGLE_SCRIPT_URL}?action=insert` +
+                      `&soldier=${encodeURIComponent(soldier)}` +
+                      `&rank=${encodeURIComponent(rank)}` +
+                      `&classification=${encodeURIComponent(itemClassification)}` +
+                      `&penalty=${encodeURIComponent(penalty)}` +
+                      `&regDate=${encodeURIComponent(regDateStr)}` +
+                      `&expDate=${encodeURIComponent(expDateStr)}` +
+                      `&id=${recordId}`;
+    
+    fetch(secureUrl)
+    .then(response => response.json())
+    .then(res => {
+        if (res.status === "success") {
+            alert(`✅ تم إدراج العسكري (${soldier}) في السجل السحابي لجوجل بنجاح وتوثيق القضية!`);
+            document.getElementById('soldierName').value = "";
+            selectedItem = null;
+            updateSystem();
+            loadSystemRecords(); // تحديث الجدول الميداني فوراً
+        } else {
+            alert("🚨 خطأ من السيرفر السحابي: " + res.error);
+        }
+    })
+    .catch(err => alert("🚨 فشل الاتصال بالسيرفر السحابي: " + err));
 }
 
 function loadSystemRecords() {
@@ -809,7 +813,6 @@ function loadSystemRecords() {
     });
 }
 
-// تشغيل النظام تلقائياً وجلب البيانات دفعة واحدة عند تحميل الصفحة
 updateSystem();
 loadSystemRecords();
 </script>

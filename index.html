@@ -350,7 +350,7 @@
 
 <div class="container">
     <header>
-        <h1>نظام الاستعلام العقابي المطور v2.0</h1>
+        <h1>نظام الاستعلام العقابي المطور v2.5 🔒</h1>
         <p>الشرطة العسكرية - MILITARY POLICE SYSTEM</p>
         <p style="color: #60a5fa; font-size: 13px; margin-top: 8px; font-weight: bold; letter-spacing: 0.5px;">🔒 تدار هذه الصفحة بالكامل من قبل قيادة امن المنشات | محافظة الرس</p>
     </header>
@@ -369,7 +369,7 @@
                     </div>
                 </div>
                 
-                <div class="inputs-row">
+                <div class="inputs-row" style="margin-bottom: 15px;">
                     <div>
                         <div class="step-title">🎖️ رتبة العسكري المخالف:</div>
                         <select id="rankSelect" onchange="updateSystem()">
@@ -387,6 +387,11 @@
                         <div class="step-title">⏳ مدة صلاحية الإنذار (بالأيام):</div>
                         <input type="number" id="alertDuration" value="7" min="1" placeholder="مثال: 7 أو 30 يوم...">
                     </div>
+                </div>
+
+                <div style="background: rgba(245, 158, 11, 0.05); padding: 12px; border-radius: 8px; border: 1px dashed var(--accent);">
+                    <div class="step-title" style="color: var(--accent);">🔑 رمز التحقق الأمني المحمي:</div>
+                    <input type="password" id="securityToken" placeholder="أدخل رمز صلاحية الشرطة العسكرية السري لإرسال القضية..." style="border-color: var(--accent);">
                 </div>
             </div>
 
@@ -516,7 +521,7 @@ const standardViolations = [
     { id: "2-11", tier: "t2", tierName: "الدرجة الثانية", text: "استخدام المنشن بشكل خاطئ" },
     { id: "2-12", tier: "t2", tierName: "الدرجة الثانية", text: "التأخر عن الاصطفاف" },
     { id: "2-13", tier: "t2", tierName: "الدرجة الثانية", text: "مخالفه قوانين السجلات الجنائيه" },
-    { id: "2-15", tier: "t2", tierName: "الدرجة الثانية", text: "عدم الإلتزام ببرتوكولات الراديو" },
+    { id: "2-15", tier: "t2", tierName: "الدرجة الثانية", text: "عدم الإلتزام بضوابط الراديو" },
     { id: "2-16", tier: "t2", tierName: "الدرجة الثانية", text: "عدم ربط الفايف ام بالدسكورد" },
     { id: "2-17", tier: "t2", tierName: "الدرجة الثانية", text: "اعطاء مخالفات غير مستحقه" },
     { id: "2-18", tier: "t2", tierName: "الدرجة الثانية", text: "مخالفة قوانين رسائل حرس الحدود" },
@@ -568,7 +573,7 @@ const standardViolations = [
     { id: "5-8", tier: "t5", tierName: "الدرجة الخامسة", text: "عدم تمثيل العسكري بصورة صحيحة بأي شكل من الأشكال" },
     { id: "5-9", tier: "t5", tierName: "الدرجة الخامسة", text: "استخدام السلطة او الوظيفه للمصلحه الشخصيه" },
     { id: "5-10", tier: "t5", tierName: "الدرجة الخامسة", text: "الاساءه لقطاعات اخرى باي شكل من الاشكال" },
-    { id: "5-11", tier: "t5", tierName: "الدرجة الخامسة", text: "التلاعب بالساعات والتأفيك" },
+    { id: "5-12", tier: "t5", tierName: "الدرجة الخامسة", text: "التلاعب بالساعات والتأفيك" },
     { id: "5-12", tier: "t5", tierName: "الدرجة الخامسة", text: "استخدام السنايبر بشكل خاطئ" },
     { id: "6-1", tier: "t6", tierName: "الدرجة السادسة", text: "الترصد لزملائك بغاية الحقد سواء بسبب او بغير سبب" },
     { id: "6-2", tier: "t6", tierName: "الدرجة السادسة", text: "عدم احترام الرتب العليا" },
@@ -731,15 +736,21 @@ function copyToDiscord() {
     });
 }
 
-// =================== نظام الحفظ والربط السحابي المطور (GET Method البند الآمن) ===================
+// =================== نظام الحفظ والربط السحابي المؤمن بالتوكن ===================
 
 function saveToSystemRecords() {
     const soldier = document.getElementById('soldierName').value.trim();
     const rank = document.getElementById('rankSelect').value;
     const durationDays = parseInt(document.getElementById('alertDuration').value);
+    const token = document.getElementById('securityToken').value.trim(); // جلب الرمز السري المتغير
     
     if (!soldier || !selectedItem) {
         alert("🚨 خطأ: يجب إدخال اسم العسكري واختيار بند المخالفة من القائمة أولاً لحفظ الإنذار!");
+        return;
+    }
+
+    if (!token) {
+        alert("🚨 حظر أمني: يجب كتابة رمز صلاحية الشرطة العسكرية في حقل الأمان لحفظ التقرير!");
         return;
     }
     
@@ -754,7 +765,7 @@ function saveToSystemRecords() {
     const expDateStr = expiryDate.toLocaleDateString('ar-EG');
     const recordId = Date.now();
     
-    // بناء رابط إرسال آمن لتجنب قيود الـ CORS والمتصفحات نهائياً
+    // بناء الرابط مشحوناً بالتوكن الأمني لحماية قاعدة البيانات من المخربين خارجيًا
     const secureUrl = `${GOOGLE_SCRIPT_URL}?action=insert` +
                       `&soldier=${encodeURIComponent(soldier)}` +
                       `&rank=${encodeURIComponent(rank)}` +
@@ -762,7 +773,8 @@ function saveToSystemRecords() {
                       `&penalty=${encodeURIComponent(penalty)}` +
                       `&regDate=${encodeURIComponent(regDateStr)}` +
                       `&expDate=${encodeURIComponent(expDateStr)}` +
-                      `&id=${recordId}`;
+                      `&id=${recordId}` +
+                      `&token=${encodeURIComponent(token)}`; // تمرير الرمز المكتوب للسيرفر
     
     fetch(secureUrl)
     .then(response => response.json())
@@ -770,11 +782,13 @@ function saveToSystemRecords() {
         if (res.status === "success") {
             alert(`✅ تم إدراج العسكري (${soldier}) في السجل السحابي لجوجل بنجاح وتوثيق القضية!`);
             document.getElementById('soldierName').value = "";
+            document.getElementById('securityToken').value = ""; // مسح خانة السر بعد النجاح لأمان أعلى
             selectedItem = null;
             updateSystem();
-            loadSystemRecords(); // تحديث الجدول الميداني فوراً
+            loadSystemRecords(); 
         } else {
-            alert("🚨 خطأ من السيرفر السحابي: " + res.error);
+            // في حال الرمز كان خطأ، جوجل سيعيد رسالة الخطأ هنا ويمنع الكتابة
+            alert("🚨 حظر أمني من السيرفر السحابي: " + res.error);
         }
     })
     .catch(err => alert("🚨 فشل الاتصال بالسيرفر السحابي: " + err));

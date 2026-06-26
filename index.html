@@ -30,7 +30,9 @@
             color: var(--text-main);
             padding: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
         }
 
         .container {
@@ -278,6 +280,57 @@
 
         .btn-copy:hover { background: #059669; }
 
+        .btn-save-record {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            color: black;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .btn-save-record:hover { background: #d98206; }
+
+        .records-container {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .records-table th, .records-table td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .records-table th {
+            background-color: #1e293b;
+            color: var(--accent);
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .status-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+
         .info-box {
             background: #111827;
             border-right: 4px solid #3b82f6;
@@ -296,15 +349,14 @@
 <body>
 
 <div class="container">
-<header>
-            <h1>نظام الاستعلام العقابي المطور v2.0</h1>
-            <p>الشرطة العسكرية - MILITARY POLICE SYSTEM</p>
-            <p style="color: #60a5fa; font-size: 13px; margin-top: 8px; font-weight: bold; letter-spacing: 0.5px;">🔒 تدار هذه الصفحة بالكامل من قبل قيادة امن المنشات | محافظة الرس</p>
-        </header>
+    <header>
+        <h1>نظام الاستعلام العقابي المطور v2.0</h1>
+        <p>الشرطة العسكرية - MILITARY POLICE SYSTEM</p>
+        <p style="color: #60a5fa; font-size: 13px; margin-top: 8px; font-weight: bold; letter-spacing: 0.5px;">🔒 تدار هذه الصفحة بالكامل من قبل قيادة امن المنشات | محافظة الرس</p>
+    </header>
 
     <div class="main-grid">
         <div>
-            <!-- إضافة خانات الأسماء والرتبة داخل كرت واحد منسق -->
             <div class="form-group">
                 <div class="inputs-row" style="margin-bottom: 15px;">
                     <div>
@@ -317,18 +369,24 @@
                     </div>
                 </div>
                 
-                <div>
-                    <div class="step-title">🎖️ رتبة العسكري المخالف:</div>
-                    <select id="rankSelect" onchange="updateSystem()">
-                        <option value="جندي">جندي</option>
-                        <option value="جندي اول">جندي أول</option>
-                        <option value="عريف + وكيل رقيب">عريف + وكيل رقيب</option>
-                        <option value="رقيب + رقيب اول">رقيب + رقيب أول</option>
-                        <option value="رئيس رقباء">رئيس رقباء</option>
-                        <option value="ملازم">ملازم</option>
-                        <option value="ملازم اول">ملازم أول</option>
-                        <option value="نقيب فما فوق">نقيب فما فوق</option>
-                    </select>
+                <div class="inputs-row">
+                    <div>
+                        <div class="step-title">🎖️ رتبة العسكري المخالف:</div>
+                        <select id="rankSelect" onchange="updateSystem()">
+                            <option value="جندي">جندي</option>
+                            <option value="جندي اول">جندي أول</option>
+                            <option value="عريف + وكيل رقيب">عريف + وكيل رقيب</option>
+                            <option value="رقيب + رقيب اول">رقيب + رقيب أول</option>
+                            <option value="رئيس رقباء">رئيس رقباء</option>
+                            <option value="ملازم">ملازم</option>
+                            <option value="ملازم اول">ملازم أول</option>
+                            <option value="نقيب فما فوق">نقيب فما فوق</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="step-title">⏳ مدة صلاحية الإنذار (بالأيام):</div>
+                        <input type="number" id="alertDuration" value="7" min="1" placeholder="مثال: 7 أو 30 يوم...">
+                    </div>
                 </div>
             </div>
 
@@ -391,6 +449,7 @@
                     <p id="resJudge" style="color: #60a5fa;">-</p>
                 </div>
                 <button class="btn-copy" style="margin-top: 15px;" onclick="copyToDiscord()">📋 نسخ التقرير للديسكورد</button>
+                <button class="btn-save-record" onclick="saveToSystemRecords()">⚖️ تسجيل وحفظ الإنذار بالنظام</button>
             </div>
 
             <div class="info-box">
@@ -406,9 +465,34 @@
     </div>
 </div>
 
+<div class="records-container">
+    <div class="step-title" style="font-size: 18px; border-bottom: 1px dashed var(--border-color); padding-bottom: 10px;">☁️ سجل الإنذارات والقضايا العسكرية السحابية الموثقة:</div>
+    <div style="overflow-x: auto;">
+        <table class="records-table">
+            <thead>
+                <tr>
+                    <th>المخالف</th>
+                    <th>الرتبة</th>
+                    <th>بند المخالفة</th>
+                    <th>العقوبة الصادرة</th>
+                    <th>تاريخ التسجيل</th>
+                    <th>تاريخ الانتهاء</th>
+                    <th>الحالة</th>
+                    <th>الإجراء</th>
+                </tr>
+            </thead>
+            <tbody id="recordsTableBody">
+                <!-- تعبأ البيانات تلقائياً من سيرفر جوجل -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <script>
+// الرابط المستخرج سحابياً من Apps Script الخاص بك مباشرة
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfybyOw_BAYklX7GPn-xEGGVpIITwuzpAh3AlnNAAhL3vjnJjqaX1KILHxHz1ohzxcT-1Aww/exec";
+
 const standardViolations = [
-    // الدرجة الاولى
     { id: "1-1", tier: "t1", tierName: "الدرجة الأولى", text: "التصدي للمجرمين بشكل خاطئ" },
     { id: "1-2", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين نقاط التفتيش" },
     { id: "1-3", tier: "t1", tierName: "الدرجة الأولى", text: "إبقاء المجرم في الدورية والتوجه لحالات أخرى" },
@@ -421,8 +505,6 @@ const standardViolations = [
     { id: "1-10", tier: "t1", tierName: "الدرجة الأولى", text: "التفاعل مع برقية رسميه" },
     { id: "1-11", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين المشتركه" },
     { id: "1-12", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين المشتركه المكررة" },
-
-    // الدرجة الثانية
     { id: "2-1", tier: "t2", tierName: "الدرجة الثانية", text: "تخطي المراجع" },
     { id: "2-2", tier: "t2", tierName: "الدرجة الثانية", text: "دخول موجات غير معتمدة" },
     { id: "2-3", tier: "t2", tierName: "الدرجة الثانية", text: "عدم التجاوب , إهمال التوجيهات في الراديو" },
@@ -444,8 +526,6 @@ const standardViolations = [
     { id: "2-20", tier: "t2", tierName: "الدرجة الثانية", text: "رفع نداء استغاثه داخل نداء مسبق" },
     { id: "2-21", tier: "t2", tierName: "الدرجة الثانية", text: "ارسال نموذج خاطئ" },
     { id: "2-22", tier: "t2", tierName: "الدرجة الثانية", text: "تجاوز السرعه المحدده داخل الميناء" },
-
-    // الدرجة الثالثة
     { id: "3-1", tier: "t3", tierName: "الدرجة الثالثة", text: "عدم التقيد بقواعد المطارادات" },
     { id: "3-2", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفة قوانين الإعتقال أو التعامل مع المتهمين" },
     { id: "3-3", tier: "t3", tierName: "الدرجة الثالثة", text: "سوء التعامل مع الحالات" },
@@ -459,7 +539,7 @@ const standardViolations = [
     { id: "3-11", tier: "t3", tierName: "الدرجة الثالثة", text: "تسجيل دخول لمباشرة حالة ثم تسجيل خروجه" },
     { id: "3-12", tier: "t3", tierName: "الدرجة الثالثة", text: "إضافة شروط الهروب الأمن غيرر المحددة ضمن التعميمات" },
     { id: "3-13", tier: "t3", tierName: "الدرجة الثالثة", text: "طلق النار بطريقه غير نظاميه" },
-    { id: "3-14", tier: "t3", tierName: "الدرجة الثالثة", text: "تحرير الرهائن بدون اذن او الفشل في تحريرها" },
+    { id: "3-14", tier: "t3", tierName: "الدرجة الثالثة", text: "تحرير الرهائن بدون اذن او الفشل in تحريرها" },
     { id: "3-15", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفه قوانين المركبات" },
     { id: "3-16", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفه قوانين السجن ( سجن غير صحيح )" },
     { id: "3-17", tier: "t3", tierName: "الدرجة الثالثة", text: "ادخال حمولة مخالفة" },
@@ -469,8 +549,6 @@ const standardViolations = [
     { id: "3-21", tier: "t3", tierName: "الدرجة الثالثة", text: "عدم الإلتزام بضوابط التفاوض" },
     { id: "3-22", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفة قوانين الاجازات" },
     { id: "3-23", tier: "t3", tierName: "الدرجة الثالثة", text: "اسقاط مواطن اعزل" },
-
-    // الدرجة الرابعة
     { id: "4-1", tier: "t4", tierName: "الدرجة الرابعة", text: "العبث بالعهدة العسكرية" },
     { id: "4-2", tier: "t4", tierName: "الدرجة الرابعة", text: "التقصير في العمل الأداري أو الميداني" },
     { id: "4-3", tier: "t4", tierName: "الدرجة الرابعة", text: "عدم الاتزام بالزي العسكري المحدد لرتبتك" },
@@ -482,8 +560,6 @@ const standardViolations = [
     { id: "4-9", tier: "t4", tierName: "الدرجة الرابعة", text: "اهمال موقع المباشره" },
     { id: "4-10", tier: "t4", tierName: "الدرجة الرابعة", text: "سجن شخص حكم عسكري" },
     { id: "4-11", tier: "t4", tierName: "الدرجة الرابعة", text: "سحب اسلحة دون وجه حق" },
-
-    // الدرجة الخامسة
     { id: "5-1", tier: "t5", tierName: "الدرجة الخامسة", text: "المناقشة أمام الأفراد" },
     { id: "5-2", tier: "t5", tierName: "الدرجة الخامسة", text: "الكذب على المسؤولين" },
     { id: "5-3", tier: "t5", tierName: "الدرجة الخامسة", text: "المجادلة في الموجه" },
@@ -496,8 +572,6 @@ const standardViolations = [
     { id: "5-10", tier: "t5", tierName: "الدرجة الخامسة", text: "الاساءه لقطاعات اخرى باي شكل من الاشكال" },
     { id: "5-11", tier: "t5", tierName: "الدرجة الخامسة", text: "التلاعب بالساعات والتأفيك" },
     { id: "5-12", tier: "t5", tierName: "الدرجة الخامسة", text: "استخدام السنايبر بشكل خاطئ" },
-
-    // الدرجة السادسة
     { id: "6-1", tier: "t6", tierName: "الدرجة السادسة", text: "الترصد لزملائك بغاية الحقد سواء بسبب او بغير سبب" },
     { id: "6-2", tier: "t6", tierName: "الدرجة السادسة", text: "عدم احترام الرتب العليا" },
     { id: "6-3", tier: "t6", tierName: "الدرجة السادسة", text: "تخريب برتبة عسكرية" },
@@ -506,8 +580,6 @@ const standardViolations = [
     { id: "6-6", tier: "t6", tierName: "الدرجة السادسة", text: "فساد عسكري" },
     { id: "6-7", tier: "t6", tierName: "الدرجة السادسة", text: "تزوير رتب" },
     { id: "6-8", tier: "t6", tierName: "الدرجة السادسة", text: "الخروج من سيرفر الدسكورد بغرض اخفاء الرتب" },
-
-    // الدرجة السابعة
     { id: "7-1", tier: "t7", tierName: "الدرجة السابعة", text: "عدم تنفيذ الجزاء الذي عليك" },
     { id: "7-2", tier: "t7", tierName: "الدرجة السابعة", text: "عدم تواجد لفترة طويلة" },
     { id: "7-3", tier: "t7", tierName: "الدرجة السابعة", text: "عدم الانصياع لاوامر القادة" },
@@ -553,7 +625,6 @@ function switchTab(mode) {
     document.getElementById('tabFixed').classList.toggle('active', mode === 'fixed');
     document.getElementById('tierFiltersContainer').style.display = (mode === 'standard') ? 'block' : 'none';
     document.getElementById('listTitle').innerText = (mode === 'standard') ? '📋 اختر البند لتطبيق العقوبة فوراً:' : '⚖️ اختر المخالفة الثابتة:';
-    
     updateSystem();
 }
 
@@ -568,7 +639,6 @@ function updateSystem() {
     const listContainer = document.getElementById('violationsList');
     listContainer.innerHTML = '';
     
-    // ربط مدخلات النص باللوحة الجانبية مباشرة
     const solInput = document.getElementById('soldierName').value.trim();
     const jdgInput = document.getElementById('judgeName').value.trim();
     
@@ -612,8 +682,6 @@ function updateSystem() {
 
         if (currentMode === 'standard') {
             penaltyText = penaltyMatrix[currentRank][selectedItem.tier];
-            
-            // شرط ذكي: إضافة "كسر رتبة" تلقائياً إذا كانت المخالفة من الدرجة الخامسة أو السادسة
             if (selectedItem.tier === 't5' || selectedItem.tier === 't6') {
                 penaltyText += " + كسر رتبة";
             }
@@ -642,7 +710,6 @@ function copyToDiscord() {
         alert("🚨 يرجى اختيار مخالفة أولاً قبل النسخ!");
         return;
     }
-    
     const soldier = document.getElementById('resSoldier').innerText;
     const rank = document.getElementById('resRank').innerText;
     const bid = document.getElementById('resId').innerText;
@@ -662,11 +729,90 @@ function copyToDiscord() {
                           `**الاعتماد  : @رئـــاســة الــشــرطـة الــعــسـكـريـة **`;
 
     navigator.clipboard.writeText(discordFormat).then(() => {
-        alert("✅ تم نسخ التقرير المطور بتنسيق الديسكورد بنجاح!");
+        alert("✅ تم نسخ التقرير المطور بنجاح!");
     });
 }
 
+// =================== برمجيات الربط السحابي بجدول جوجل المحدثة ===================
+
+function saveToSystemRecords() {
+    const soldier = document.getElementById('soldierName').value.trim();
+    const rank = document.getElementById('rankSelect').value;
+    const durationDays = parseInt(document.getElementById('alertDuration').value);
+    
+    if (!soldier || !selectedItem) {
+        alert("🚨 خطأ: يجب إدخال اسم العسكري واختيار بند المخالفة أولاً لحفظ الإنذار!");
+        return;
+    }
+    
+    const penalty = document.getElementById('resPenalty').innerText;
+    const itemClassification = document.getElementById('resId').innerText;
+    
+    const registrationDate = new Date();
+    const expiryDate = new Date();
+    expiryDate.setDate(registrationDate.getDate() + durationDays);
+    
+    const recordObj = {
+        id: Date.now(),
+        soldier: soldier,
+        rank: rank,
+        classification: itemClassification,
+        penalty: penalty,
+        regDate: registrationDate.toLocaleDateString('ar-EG'),
+        expDate: expiryDate.toLocaleDateString('ar-EG')
+    };
+    
+    // إرسال البيانات فوراً إلى جدول جوجل السحابي الموثق
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(recordObj)
+    }).then(() => {
+        alert(`✅ تم إدراج العسكري (${soldier}) في السجل السحابي لجوجل بنظام أمن المنشآت بنجاح!`);
+        document.getElementById('soldierName').value = "";
+        selectedItem = null;
+        updateSystem();
+        loadSystemRecords(); // تحديث الجدول الميداني فوراً
+    }).catch(err => alert("🚨 فشل الاتصال بالسيرفر السحابي: " + err));
+}
+
+function loadSystemRecords() {
+    const tableBody = document.getElementById('recordsTableBody');
+    tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--accent); padding:15px;">🔄 جاري جلب ومزامنة البيانات السحابية الحية من جدول جوجل...</td></tr>`;
+    
+    fetch(GOOGLE_SCRIPT_URL)
+    .then(response => response.json())
+    .then(records => {
+        tableBody.innerHTML = '';
+        
+        if (!records || records.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:15px;">لا توجد قضايا أو إنذارات مسجلة سحابياً حتى الآن.</td></tr>`;
+            return;
+        }
+        
+        records.forEach(rec => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:bold; color:#fff;">${rec.soldier}</td>
+                <td style="color:#60a5fa;">${rec.rank}</td>
+                <td style="color:var(--accent);">${rec.classification}</td>
+                <td>${rec.penalty}</td>
+                <td>${rec.regDate}</td>
+                <td>${rec.expDate}</td>
+                <td><span class="status-badge status-active">نشط سحابياً ☁️</span></td>
+                <td><a href="https://docs.google.com/spreadsheets/" target="_blank" style="color:#ef4444; text-decoration:none; font-size:12px; font-weight:bold;">تعديل بالإكسل 📊</a></td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }).catch(err => {
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:15px;">🚨 خطأ: لم نتمكن من جلب السجلات (تأكد من النشر للجميع Anyone أو انتظر ثواني).</td></tr>`;
+    });
+}
+
+// تشغيل النظام تلقائياً وجلب البيانات دفعة واحدة عند تحميل الصفحة
 updateSystem();
+loadSystemRecords();
 </script>
 
 </body>

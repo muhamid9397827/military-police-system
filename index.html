@@ -361,11 +361,11 @@
                 <div class="inputs-row" style="margin-bottom: 15px;">
                     <div>
                         <div class="step-title">👤 اسم العسكري المخالف:</div>
-                        <input type="text" id="soldierName" placeholder="أدخل اسم العسكري..." oninput="updateSystem()">
+                        <input type="text" id="soldierName" placeholder="أدخل اسم العسكري أو المنشن..." oninput="updateSystem()">
                     </div>
                     <div>
                         <div class="step-title">👨‍⚖️ اسم القاضي / المفتش:</div>
-                        <input type="text" id="judgeName" placeholder="أدخل اسم القاضي..." oninput="updateSystem()">
+                        <input type="text" id="judgeName" placeholder="أدخل اسم القاضي أو المنشن..." oninput="updateSystem()">
                     </div>
                 </div>
                 
@@ -453,7 +453,7 @@
                     <h4>اسم القاضي / المفتش:</h4>
                     <p id="resJudge" style="color: #60a5fa;">-</p>
                 </div>
-                <button class="btn-copy" style="margin-top: 15px;" onclick="copyToDiscord()">📋 نسخ التقرير للديسكورد</button>
+                <button class="btn-copy" style="margin-top: 15px;" onclick="copyToDiscord()">📋 نسخ ملف التحقيق للديسكورد</button>
                 <button class="btn-save-record" onclick="saveToSystemRecords()">⚖️ تسجيل وحفظ الإنذار بالنظام</button>
             </div>
 
@@ -708,31 +708,33 @@ function updateSystem() {
     }
 }
 
+// دالة النسخ المُعدلة حسب القالب الجديد لمجلس القضاء العسكري
 function copyToDiscord() {
     if (!selectedItem) {
         alert("🚨 يرجى اختيار مخالفة أولاً قبل النسخ!");
         return;
     }
     const soldier = document.getElementById('resSoldier').innerText;
-    const rank = document.getElementById('resRank').innerText;
     const bid = document.getElementById('resId').innerText;
     const txt = document.getElementById('resText').innerText;
     const pnl = document.getElementById('resPenalty').innerText;
     const judge = document.getElementById('resJudge').innerText;
 
-    const discordFormat = `**🚨 [ تقرير مخالفة عسكرية صادر عن الشرطة العسكرية ] 🚨**\n` +
-                          `**👤 اسم العسكري المخالف:** ${soldier}\n` +
-                          `**🎖️ رتبة المخالف:** ${rank}\n` +
-                          `**📋 تصنيف البند:** ${bid}\n` +
-                          `**⚖️ نص المخالفة:** ${txt}\n` +
-                          `**💰 العقوبة المطبقة ميدانياً:** ${pnl}\n` +
-                          `**👨‍⚖️ اسم القاضي / المفتش:** ${judge}\n` +
-                          `**⏰ التاريخ:** ${new Date().toLocaleDateString('ar-EG')}\n` +
-                          `====================================\n` +
-                          `**الاعتماد  : @رئـــاســة الــشــرطـة الــعــسـكـريـة **`;
+    // توليد رقم ملف تحقيق عشوائي (بين 1000 و 9999)
+    const fileNumber = Math.floor(1000 + Math.random() * 9000);
+
+    // تنسيق الديسكورد الجديد لمجلس القضاء العسكري
+    const discordFormat = `تم فتح ملف تحقيق رقم : ${fileNumber}\n\n` +
+                          `\`هيئه التحقيق العسكري   :   \`  ${judge}\n\n` +
+                          `\` على العسكري :\`       ${soldier}\n\n` +
+                          `\`التهمة :  \`   ${txt} / ${bid}\n\n` +
+                          `\`تم سماع أقواله :  \`   لم يحضر الاستدعاء\n\n` +
+                          `\`أتضح لنا أنه :   مذنب / غير مذنب  \`  \n` +
+                          `يُرسل ملفنا هذا إلى <@&1305901086158225490>  لإصدار الحكم بحق المذكور أعلاه\n\n` +
+                          `\`الحكم المقترح:  \` ${pnl}`;
 
     navigator.clipboard.writeText(discordFormat).then(() => {
-        alert("✅ تم نسخ التقرير المطور بنجاح!");
+        alert("✅ تم نسخ ملف التحقيق للديسكورد بنجاح!");
     });
 }
 

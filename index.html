@@ -1,838 +1,511 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام المخالفات المطور | الشرطة العسكرية</title>
-    <style>
-        :root {
-            --bg-main: #0b0f19;
-            --bg-card: #151d30;
-            --bg-input: #1f2b45;
-            --primary: #ef4444;
-            --primary-hover: #dc2626;
-            --accent: #f59e0b;
-            --success: #10b981;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #2d3d5a;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1100px;
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            border: 1px solid var(--border-color);
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 3px double var(--primary);
-            padding-bottom: 20px;
-        }
-
-        header h1 {
-            font-size: 28px;
-            letter-spacing: 1px;
-        }
-
-        header p {
-            color: var(--accent);
-            font-size: 14px;
-            font-weight: bold;
-            margin-top: 5px;
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr;
-            gap: 25px;
-        }
-
-        @media (max-width: 900px) {
-            .main-grid { grid-template-columns: 1fr; }
-        }
-
-        .step-title {
-            font-size: 15px;
-            margin-bottom: 12px;
-            color: var(--accent);
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-            background: rgba(255,255,255,0.02);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .inputs-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        @media (max-width: 600px) {
-            .inputs-row { grid-template-columns: 1fr; }
-        }
-
-        select, input {
-            width: 100%;
-            padding: 12px;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-main);
-            font-size: 15px;
-            outline: none;
-            transition: all 0.3s;
-        }
-
-        select:focus, input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
-        }
-
-        .section-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 10px;
-            background: #1e293b;
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-        }
-
-        .tab-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .tier-buttons {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
-        .tier-btn {
-            background: var(--bg-input);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            padding: 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-            transition: all 0.2s;
-        }
-
-        .tier-btn:hover { background: rgba(239, 68, 68, 0.2); }
-        .tier-btn.active {
-            background: var(--accent);
-            color: #000;
-            border-color: var(--accent);
-        }
-
-        .violations-list {
-            max-height: 320px;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: #0d1321;
-        }
-
-        .violation-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s;
-            font-size: 13px;
-        }
-
-        .violation-item:hover {
-            background: rgba(239, 68, 68, 0.15);
-        }
-
-        .violation-item.selected {
-            background: rgba(239, 68, 68, 0.25);
-            border-right: 4px solid var(--primary);
-        }
-
-        .violation-id {
-            background: #27354f;
-            color: #f8fafc;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            white-space: nowrap;
-        }
-
-        .side-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .result-card {
-            background: linear-gradient(145deg, #1e293b, #0f172a);
-            border: 1px solid var(--accent);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        }
-
-        .result-item {
-            margin-bottom: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            padding-bottom: 10px;
-        }
-
-        .result-item:last-child { border: none; }
-
-        .result-item h4 {
-            color: var(--text-muted);
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-
-        .result-item p {
-            font-size: 15px;
-            font-weight: 600;
-        }
-
-        .penalty-box {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px dashed var(--primary);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            margin-top: 10px;
-        }
-
-        .penalty-box h3 {
-            color: var(--primary);
-            font-size: 22px;
-            margin-top: 5px;
-        }
-
-        .switch-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(239, 68, 68, 0.08);
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            margin-bottom: 15px;
-        }
-
-        .btn-copy {
-            width: 100%;
-            padding: 12px;
-            background: var(--success);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-            font-size: 14px;
-        }
-
-        .btn-copy:hover { background: #059669; }
-
-        .btn-save-record {
-            width: 100%;
-            padding: 12px;
-            background: var(--accent);
-            color: black;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 10px;
-            transition: background 0.2s;
-        }
-        .btn-save-record:hover { background: #d98206; }
-
-        .records-container {
-            width: 100%;
-            max-width: 1100px;
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 25px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-        }
-
-        .records-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-
-        .records-table th, .records-table td {
-            padding: 12px;
-            text-align: right;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .records-table th {
-            background-color: #1e293b;
-            color: var(--accent);
-        }
-
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 12px;
-        }
-        .status-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-
-        .info-box {
-            background: #111827;
-            border-right: 4px solid #3b82f6;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 12px;
-            line-height: 1.6;
-        }
-
-        .info-box ul {
-            margin-right: 15px;
-            margin-top: 5px;
-        }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#07111f">
+    <meta name="referrer" content="no-referrer">
+    <meta
+        http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'"
+    >
+    <title>نظام الاستعلام العقابي | الشرطة العسكرية</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+    <a class="skip-link" href="#mainContent">الانتقال إلى المحتوى</a>
 
-<div class="container">
-    <header>
-        <h1>نظام الاستعلام العقابي المطور v2.5 🔒</h1>
-        <p>الشرطة العسكرية - MILITARY POLICE SYSTEM</p>
-        <p style="color: #60a5fa; font-size: 13px; margin-top: 8px; font-weight: bold; letter-spacing: 0.5px;">🔒 تدار هذه الصفحة بالكامل من قبل قيادة امن المنشات | محافظة الرس</p>
-    </header>
+    <div class="app-shell">
+        <header class="topbar">
+            <a class="brand" href="#" aria-label="العودة إلى بداية النظام">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" focusable="false">
+                        <path d="M24 3 40 9v12c0 11-6.8 19.5-16 24C14.8 40.5 8 32 8 21V9l16-6Z"></path>
+                        <path d="m17 24 5 5 10-11"></path>
+                    </svg>
+                </span>
+                <span>
+                    <strong>الشرطة العسكرية</strong>
+                    <small>نظام الاستعلام العقابي</small>
+                </span>
+            </a>
 
-    <div class="main-grid">
-        <div>
-            <div class="form-group">
-                <div class="inputs-row" style="margin-bottom: 15px;">
-                    <div>
-                        <div class="step-title">👤 اسم العسكري المخالف:</div>
-                        <input type="text" id="soldierName" placeholder="أدخل اسم العسكري أو المنشن..." oninput="updateSystem()">
+            <div class="status-pill" id="cloudStatus" data-state="idle" role="status">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span id="cloudStatusText">جاهز للاستخدام</span>
+            </div>
+        </header>
+
+        <main id="mainContent">
+            <section class="hero" aria-labelledby="pageTitle">
+                <div class="hero-copy">
+                    <p class="eyebrow">مسار موحد للتحقيق والقضاء العسكري</p>
+                    <h1 id="pageTitle">اقتراح العقوبة وتوثيق الإنذار بوضوح</h1>
+                    <p>
+                        تصل الشرطة العسكرية إلى العقوبة المقترحة وتنسخ تقرير التحقيق
+                        بينما يبقى تثبيت الإنذار محصورًا بأعضاء مجلس القضاء العسكري
+                    </p>
+                </div>
+                <div class="hero-features" aria-label="مزايا النظام">
+                    <span>بحث سريع</span>
+                    <span>تقرير منسق</span>
+                    <span>تثبيت محمي</span>
+                </div>
+            </section>
+
+            <nav class="workflow-tabs" aria-label="أقسام النظام" role="tablist">
+                <button
+                    class="workflow-tab is-active"
+                    id="calculatorTab"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="calculatorView"
+                    data-view="calculator"
+                >
+                    اقتراح عقوبة
+                </button>
+                <button
+                    class="workflow-tab"
+                    id="recordsTab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="recordsView"
+                    tabindex="-1"
+                    data-view="records"
+                >
+                    سجل مجلس القضاء
+                </button>
+            </nav>
+
+            <section
+                id="calculatorView"
+                class="view-panel"
+                role="tabpanel"
+                aria-labelledby="calculatorTab"
+            >
+                <div class="workspace">
+                    <section class="form-panel" aria-labelledby="caseDataTitle">
+                        <div class="section-heading">
+                            <span class="step-number">1</span>
+                            <div>
+                                <p class="section-kicker">بيانات ملف التحقيق</p>
+                                <h2 id="caseDataTitle">حدد أطراف القضية</h2>
+                            </div>
+                        </div>
+
+                        <form id="caseForm" novalidate>
+                            <div class="field-grid">
+                                <div class="field">
+                                    <label for="investigatorName">اسم المحقق</label>
+                                    <input
+                                        id="investigatorName"
+                                        name="investigatorName"
+                                        type="text"
+                                        maxlength="80"
+                                        autocomplete="off"
+                                        placeholder="مثال مجاهد ال عباد"
+                                        required
+                                        aria-describedby="investigatorError"
+                                    >
+                                    <small class="field-error" id="investigatorError"></small>
+                                </div>
+
+                                <div class="field">
+                                    <label for="accusedName">اسم المتهم العسكري</label>
+                                    <input
+                                        id="accusedName"
+                                        name="accusedName"
+                                        type="text"
+                                        maxlength="80"
+                                        autocomplete="off"
+                                        placeholder="اكتب الاسم أو المنشن"
+                                        required
+                                        aria-describedby="accusedError"
+                                    >
+                                    <small class="field-error" id="accusedError"></small>
+                                </div>
+
+                                <div class="field field-full">
+                                    <label for="rankSelect">رتبة المتهم العسكري</label>
+                                    <select id="rankSelect" name="rank" required>
+                                        <option value="جندي" data-matrix-key="جندي">جندي</option>
+                                        <option value="جندي أول" data-matrix-key="جندي اول">جندي أول</option>
+                                        <option value="عريف" data-matrix-key="عريف + وكيل رقيب">عريف</option>
+                                        <option value="وكيل رقيب" data-matrix-key="عريف + وكيل رقيب">وكيل رقيب</option>
+                                        <option value="رقيب" data-matrix-key="رقيب + رقيب اول">رقيب</option>
+                                        <option value="رقيب أول" data-matrix-key="رقيب + رقيب اول">رقيب أول</option>
+                                        <option value="رئيس رقباء" data-matrix-key="رئيس رقباء">رئيس رقباء</option>
+                                        <option value="ملازم" data-matrix-key="ملازم">ملازم</option>
+                                        <option value="ملازم أول" data-matrix-key="ملازم اول">ملازم أول</option>
+                                        <option value="نقيب فما فوق" data-matrix-key="نقيب فما فوق">نقيب فما فوق</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="section-heading section-heading-spaced">
+                            <span class="step-number">2</span>
+                            <div>
+                                <p class="section-kicker">بنك المخالفات</p>
+                                <h2>اختر المخالفة</h2>
+                            </div>
+                        </div>
+
+                        <div class="segmented" role="group" aria-label="نوع المخالفة">
+                            <button
+                                class="segmented-button is-active"
+                                id="standardModeButton"
+                                type="button"
+                                aria-pressed="true"
+                                data-mode="standard"
+                            >
+                                بنود الدرجات
+                            </button>
+                            <button
+                                class="segmented-button"
+                                id="fixedModeButton"
+                                type="button"
+                                aria-pressed="false"
+                                data-mode="fixed"
+                            >
+                                المخالفات الثابتة
+                            </button>
+                        </div>
+
+                        <div id="standardFilters">
+                            <div class="filter-row" id="tierFilters" aria-label="تصفية درجة المخالفة">
+                                <button class="filter-chip is-active" type="button" data-tier="all" aria-pressed="true">الكل</button>
+                                <button class="filter-chip" type="button" data-tier="t1" aria-pressed="false">الأولى</button>
+                                <button class="filter-chip" type="button" data-tier="t2" aria-pressed="false">الثانية</button>
+                                <button class="filter-chip" type="button" data-tier="t3" aria-pressed="false">الثالثة</button>
+                                <button class="filter-chip" type="button" data-tier="t4" aria-pressed="false">الرابعة</button>
+                                <button class="filter-chip" type="button" data-tier="t5" aria-pressed="false">الخامسة</button>
+                                <button class="filter-chip" type="button" data-tier="t6" aria-pressed="false">السادسة</button>
+                                <button class="filter-chip" type="button" data-tier="t7" aria-pressed="false">السابعة</button>
+                            </div>
+                        </div>
+
+                        <div class="field search-field">
+                            <label class="sr-only" for="violationSearch">البحث في المخالفات</label>
+                            <span class="search-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" focusable="false">
+                                    <circle cx="11" cy="11" r="7"></circle>
+                                    <path d="m20 20-4-4"></path>
+                                </svg>
+                            </span>
+                            <input
+                                id="violationSearch"
+                                type="search"
+                                autocomplete="off"
+                                placeholder="ابحث برقم البند أو نص المخالفة"
+                            >
+                            <span class="result-count" id="violationCount" aria-live="polite"></span>
+                        </div>
+
+                        <div
+                            class="violation-list"
+                            id="violationList"
+                            aria-label="قائمة المخالفات"
+                        ></div>
+                    </section>
+
+                    <aside class="summary-panel" aria-labelledby="summaryTitle">
+                        <div class="summary-head">
+                            <div>
+                                <p class="section-kicker">النتيجة الحالية</p>
+                                <h2 id="summaryTitle">العقوبة المقترحة</h2>
+                            </div>
+                            <span class="draft-badge">اقتراح غير مثبت</span>
+                        </div>
+
+                        <dl class="summary-list">
+                            <div>
+                                <dt>المتهم</dt>
+                                <dd id="summaryAccused">لم يحدد بعد</dd>
+                            </div>
+                            <div>
+                                <dt>المحقق</dt>
+                                <dd id="summaryInvestigator">لم يحدد بعد</dd>
+                            </div>
+                            <div>
+                                <dt>المخالفة</dt>
+                                <dd id="summaryViolation">اختر مخالفة من القائمة</dd>
+                            </div>
+                            <div>
+                                <dt>البند والدرجة</dt>
+                                <dd id="summaryClassification">لم يحدد بعد</dd>
+                            </div>
+                            <div>
+                                <dt>الرتبة</dt>
+                                <dd id="summaryRank">جندي</dd>
+                            </div>
+                        </dl>
+
+                        <div class="penalty-result" aria-live="polite">
+                            <span>الحكم المقترح</span>
+                            <strong id="summaryPenalty">اختر مخالفة لعرض العقوبة</strong>
+                        </div>
+
+                        <label class="repeat-toggle" for="repeatOffense">
+                            <input id="repeatOffense" type="checkbox">
+                            <span class="toggle-control" aria-hidden="true"></span>
+                            <span>
+                                <strong>المخالفة مكررة</strong>
+                                <small>تطبيق صيغة المضاعفة الموجودة في النظام</small>
+                            </span>
+                        </label>
+
+                        <details class="report-preview">
+                            <summary>معاينة تقرير التحقيق</summary>
+                            <pre id="reportPreview">أكمل بيانات القضية واختر المخالفة لعرض التقرير</pre>
+                        </details>
+
+                        <div class="summary-actions">
+                            <button class="button button-primary" id="copyReportButton" type="button">
+                                نسخ تقرير التحقيق
+                            </button>
+                            <button class="button button-court" id="openCourtModalButton" type="button">
+                                تثبيت الإنذار لمجلس القضاء
+                            </button>
+                            <button class="button button-ghost" id="resetCaseButton" type="button">
+                                بدء قضية جديدة
+                            </button>
+                        </div>
+
+                        <p class="privacy-note">
+                            النسخ يتم داخل جهازك فقط ولا يرسل الموقع أي رسالة إلى ديسكورد
+                        </p>
+                    </aside>
+                </div>
+            </section>
+
+            <section
+                id="recordsView"
+                class="view-panel"
+                role="tabpanel"
+                aria-labelledby="recordsTab"
+                hidden
+            >
+                <div class="records-section">
+                    <section class="records-gate" id="recordsGate" aria-labelledby="recordsGateTitle">
+                        <span class="gate-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                                <rect x="5" y="10" width="14" height="11" rx="2"></rect>
+                                <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+                            </svg>
+                        </span>
+                        <p class="section-kicker">وصول أعضاء مجلس القضاء</p>
+                        <h2 id="recordsGateTitle">السجل محمي برمز التحقق</h2>
+                        <p>أدخل الرمز لعرض الإنذارات المثبتة والأرشيف</p>
+                        <form id="recordsUnlockForm" class="gate-form">
+                            <div class="field">
+                                <label for="recordsToken">رمز مجلس القضاء</label>
+                                <input
+                                    id="recordsToken"
+                                    type="password"
+                                    autocomplete="current-password"
+                                    maxlength="120"
+                                    required
+                                >
+                            </div>
+                            <button class="button button-primary" id="unlockRecordsButton" type="submit">
+                                فتح السجل
+                            </button>
+                        </form>
+                    </section>
+
+                    <div id="recordsContent" hidden>
+                        <div class="records-header">
+                            <div>
+                                <p class="section-kicker">السجل القضائي</p>
+                                <h2>الإنذارات العسكرية المثبتة</h2>
+                                <p class="sync-text" id="lastSyncText">لم تتم المزامنة بعد</p>
+                            </div>
+                            <button class="button button-secondary" id="refreshRecordsButton" type="button">
+                                تحديث السجل
+                            </button>
+                        </div>
+
+                        <div class="stats-grid" aria-label="ملخص السجل">
+                            <article class="stat-card">
+                                <span>الإنذارات النشطة</span>
+                                <strong id="activeCount">0</strong>
+                            </article>
+                            <article class="stat-card stat-warning">
+                                <span>تنتهي خلال ثلاثة أيام</span>
+                                <strong id="expiringCount">0</strong>
+                            </article>
+                            <article class="stat-card">
+                                <span>إجمالي الأرشيف</span>
+                                <strong id="archiveCount">0</strong>
+                            </article>
+                        </div>
+
+                        <div class="records-toolbar">
+                            <div class="segmented record-scope" role="group" aria-label="حالة السجل">
+                                <button
+                                    class="segmented-button is-active"
+                                    type="button"
+                                    data-scope="active"
+                                    aria-pressed="true"
+                                >
+                                    السجل النشط
+                                </button>
+                                <button
+                                    class="segmented-button"
+                                    type="button"
+                                    data-scope="archive"
+                                    aria-pressed="false"
+                                >
+                                    الأرشيف
+                                </button>
+                            </div>
+                            <div class="field records-search">
+                                <label class="sr-only" for="recordsSearch">البحث في السجل</label>
+                                <input
+                                    id="recordsSearch"
+                                    type="search"
+                                    autocomplete="off"
+                                    placeholder="ابحث بالاسم أو رقم الملف أو البند"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="records-feedback" id="recordsFeedback" role="status"></div>
+
+                        <div class="records-table-wrap">
+                            <table class="records-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">رقم الملف</th>
+                                        <th scope="col">المتهم</th>
+                                        <th scope="col">الرتبة</th>
+                                        <th scope="col">المخالفة</th>
+                                        <th scope="col">العقوبة</th>
+                                        <th scope="col">المحقق</th>
+                                        <th scope="col">تاريخ التثبيت</th>
+                                        <th scope="col">تاريخ الانتهاء</th>
+                                        <th scope="col">الحالة</th>
+                                        <th scope="col">الإجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recordsTableBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="records-cards" id="recordsCards"></div>
                     </div>
-                    <div>
-                        <div class="step-title">👨‍⚖️ اسم القاضي / المفتش:</div>
-                        <input type="text" id="judgeName" placeholder="أدخل اسم القاضي أو المنشن..." oninput="updateSystem()">
-                    </div>
                 </div>
-                
-                <div class="inputs-row" style="margin-bottom: 15px;">
-                    <div>
-                        <div class="step-title">🎖️ رتبة العسكري المخالف:</div>
-                        <select id="rankSelect" onchange="updateSystem()">
-                            <option value="جندي">جندي</option>
-                            <option value="جندي اول">جندي أول</option>
-                            <option value="عريف + وكيل رقيب">عريف + وكيل رقيب</option>
-                            <option value="رقيب + رقيب اول">رقيب + رقيب أول</option>
-                            <option value="رئيس رقباء">رئيس رقباء</option>
-                            <option value="ملازم">ملازم</option>
-                            <option value="ملازم اول">ملازم أول</option>
-                            <option value="نقيب فما فوق">نقيب فما فوق</option>
-                        </select>
-                    </div>
-                    <div>
-                        <div class="step-title">⏳ مدة صلاحية الإنذار (بالأيام):</div>
-                        <input type="number" id="alertDuration" value="7" min="1" placeholder="مثال: 7 أو 30 يوم...">
-                    </div>
-                </div>
+            </section>
+        </main>
 
-                <div style="background: rgba(245, 158, 11, 0.05); padding: 12px; border-radius: 8px; border: 1px dashed var(--accent);">
-                    <div class="step-title" style="color: var(--accent);">🔑 رمز التحقق الأمني المحمي:</div>
-                    <input type="password" id="securityToken" placeholder="أدخل رمز صلاحية الشرطة العسكرية السري لإرسال القضية..." style="border-color: var(--accent);">
-                </div>
-            </div>
-
-            <div class="section-tabs">
-                <button class="tab-btn active" id="tabStandard" onclick="switchTab('standard')">📋 بنود درجات المخالفات (1-7)</button>
-                <button class="tab-btn" id="tabFixed" onclick="switchTab('fixed')">⚖️ قوانين ومخالفات ثابتة</button>
-            </div>
-
-            <div id="tierFiltersContainer">
-                <div class="tier-buttons">
-                    <button class="tier-btn active" onclick="filterTier('all', this)">كل الدرجات</button>
-                    <button class="tier-btn" onclick="filterTier('t1', this)">الدرجة 1</button>
-                    <button class="tier-btn" onclick="filterTier('t2', this)">الدرجة 2</button>
-                    <button class="tier-btn" onclick="filterTier('t3', this)">الدرجة 3</button>
-                    <button class="tier-btn" onclick="filterTier('t4', this)">الدرجة 4</button>
-                    <button class="tier-btn" onclick="filterTier('t5', this)">الدرجة 5</button>
-                    <button class="tier-btn" onclick="filterTier('t6', this)">الدرجة 6</button>
-                    <button class="tier-btn" onclick="filterTier('t7', this)">الدرجة 7</button>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <input type="text" id="searchInput" placeholder="🔍 بحث سريع في نصوص البنود والمخالفات..." oninput="updateSystem()">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <div class="step-title" id="listTitle">📋 اختر البند لتطبيق العقوبة فوراً:</div>
-                <div class="violations-list" id="violationsList"></div>
-            </div>
-        </div>
-
-        <div class="side-panel">
-            <div class="switch-container">
-                <input type="checkbox" id="doubleCheck" onchange="updateSystem()" style="width: auto; cursor: pointer;">
-                <label for="doubleCheck" style="font-weight: bold; color: var(--primary); cursor: pointer;">⚠️ المخالفة مكررة (تدبيل العقوبة والغرابة ×2)</label>
-            </div>
-
-            <div class="result-card">
-                <div class="result-item">
-                    <h4>اسم العسكري المخالف:</h4>
-                    <p id="resSoldier" style="color: #60a5fa;">-</p>
-                </div>
-                <div class="result-item">
-                    <h4>المخالفة المسجلة:</h4>
-                    <p id="resText" style="color: #fff;">يرجى تحديد مخالفة من القائمة...</p>
-                </div>
-                <div class="result-item">
-                    <h4>رقم البند / التصنيف:</h4>
-                    <p id="resId" style="color: var(--accent);">-</p>
-                </div>
-                <div class="result-item">
-                    <h4>الرتبة المستهدفة:</h4>
-                    <p id="resRank" style="color: #60a5fa;">-</p>
-                </div>
-                <div class="penalty-box">
-                    <h4>العقوبة النهائية المستحقة:</h4>
-                    <h3 id="resPenalty">-</h3>
-                </div>
-                <div class="result-item" style="margin-top: 15px;">
-                    <h4>اسم القاضي / المفتش:</h4>
-                    <p id="resJudge" style="color: #60a5fa;">-</p>
-                </div>
-                <button class="btn-copy" style="margin-top: 15px;" onclick="copyToDiscord()">📋 نسخ ملف التحقيق للديسكورد</button>
-                <button class="btn-save-record" onclick="saveToSystemRecords()">⚖️ تسجيل وحفظ الإنذار بالنظام</button>
-            </div>
-
-            <div class="info-box">
-                <strong style="color: var(--accent);">📌 تنويهات هامة من القيادة:</strong>
-                <ul>
-                    <li>في حال عدم توفر البند، تتم المحاسبة **تقديرياً**.</li>
-                    <li>تسلم جميع الغرامات المقبوضة إلى **الشرطة العسكرية**.</li>
-                    <li>لا يزال أي تحذير إلا بعد انتهاء المدة ودفع الغرامة كاملة.</li>
-                    <li>في حال عدم حضور المحكمة خلال 24 ساعة وكان التبرير مقنعاً، **يُزال نصف العقوبة فقط**.</li>
-                </ul>
-            </div>
-        </div>
+        <footer class="footer">
+            <p>نظام مخصص لتسهيل عمل الشرطة العسكرية ومجلس القضاء العسكري</p>
+            <span id="appVersion">الإصدار 3</span>
+        </footer>
     </div>
-</div>
 
-<div class="records-container">
-    <div class="step-title" style="font-size: 18px; border-bottom: 1px dashed var(--border-color); padding-bottom: 10px;">☁️ سجل الإنذارات والقضايا العسكرية السحابية الموثقة:</div>
-    <div style="overflow-x: auto;">
-        <table class="records-table">
-            <thead>
-                <tr>
-                    <th>المخالف</th>
-                    <th>الرتبة</th>
-                    <th>بند المخالفة</th>
-                    <th>العقوبة الصادرة</th>
-                    <th>تاريخ التسجيل</th>
-                    <th>تاريخ الانتهاء</th>
-                    <th>الحالة</th>
-                    <th>الإجراء</th>
-                </tr>
-            </thead>
-            <tbody id="recordsTableBody">
-                </tbody>
-        </table>
+    <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+    <div class="modal-backdrop" id="courtModal" hidden>
+        <section
+            class="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="courtModalTitle"
+            aria-describedby="courtModalDescription"
+        >
+            <div class="modal-header">
+                <div>
+                    <p class="section-kicker">إجراء محمي</p>
+                    <h2 id="courtModalTitle">تثبيت الإنذار</h2>
+                </div>
+                <button class="icon-button" id="closeCourtModalButton" type="button" aria-label="إغلاق">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="m6 6 12 12M18 6 6 18"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <p id="courtModalDescription" class="modal-description">
+                هذا الإجراء مخصص لأعضاء مجلس القضاء العسكري ويضيف الإنذار إلى السجل النشط
+            </p>
+
+            <div class="court-case-summary" id="courtCaseSummary"></div>
+
+            <form id="courtConfirmForm" novalidate>
+                <div class="field-grid">
+                    <div class="field">
+                        <label for="courtMemberName">اسم عضو مجلس القضاء</label>
+                        <input
+                            id="courtMemberName"
+                            type="text"
+                            maxlength="80"
+                            autocomplete="off"
+                            placeholder="الاسم أو المنشن"
+                            required
+                            aria-describedby="courtMemberError"
+                        >
+                        <small class="field-error" id="courtMemberError"></small>
+                    </div>
+                    <div class="field">
+                        <label for="investigationFileNumber">رقم ملف التحقيق</label>
+                        <input
+                            id="investigationFileNumber"
+                            type="text"
+                            inputmode="numeric"
+                            maxlength="20"
+                            required
+                            aria-describedby="investigationFileError"
+                        >
+                        <small class="field-error" id="investigationFileError"></small>
+                    </div>
+                    <div class="field">
+                        <label for="warningDurationDays">مدة الإنذار بالأيام</label>
+                        <input
+                            id="warningDurationDays"
+                            type="number"
+                            value="7"
+                            min="1"
+                            max="365"
+                            inputmode="numeric"
+                            required
+                            aria-describedby="warningDurationError"
+                        >
+                        <small class="field-error" id="warningDurationError"></small>
+                    </div>
+                    <div class="field">
+                        <label for="courtSecurityToken">رمز مجلس القضاء</label>
+                        <input
+                            id="courtSecurityToken"
+                            type="password"
+                            maxlength="120"
+                            autocomplete="current-password"
+                            required
+                            aria-describedby="courtTokenError"
+                        >
+                        <small class="field-error" id="courtTokenError"></small>
+                    </div>
+                </div>
+
+                <div class="modal-note">
+                    يبدأ احتساب المدة من وقت التثبيت ويُنقل الإنذار إلى الأرشيف تلقائيًا عند انتهائها
+                </div>
+
+                <div class="modal-actions">
+                    <button class="button button-ghost" id="cancelCourtButton" type="button">إلغاء</button>
+                    <button class="button button-court" id="confirmCourtButton" type="submit">
+                        اعتماد وتثبيت الإنذار
+                    </button>
+                </div>
+            </form>
+        </section>
     </div>
-</div>
 
-<script>
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOw_BAYkIX7GPn-xEGGVpIITwuzpAh3AlnNAAhL3vjnJjqaX1KlLHxHz1ohzxcT-1Aww/exec";
-
-const standardViolations = [
-    { id: "1-1", tier: "t1", tierName: "الدرجة الأولى", text: "التصدي للمجرمين بشكل خاطئ" },
-    { id: "1-2", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين نقاط التفتيش" },
-    { id: "1-3", tier: "t1", tierName: "الدرجة الأولى", text: "إبقاء المجرم في الدورية والتوجه لحالات أخرى" },
-    { id: "1-4", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين الميدان بشكل عام" },
-    { id: "1-5", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين المصادرات بشكل كامل" },
-    { id: "1-6", tier: "t1", tierName: "الدرجة الأولى", text: "عدم تسليم الممنوعات" },
-    { id: "1-7", tier: "t1", tierName: "الدرجة الأولى", text: "عدم تغيير المسمى الميداني" },
-    { id: "1-8", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفه قوانين ( كود 7 )" },
-    { id: "1-9", tier: "t1", tierName: "الدرجة الأولى", text: "دخول المركز بالمركبة الشخصية" },
-    { id: "1-10", tier: "t1", tierName: "الدرجة الأولى", text: "التفاعل مع برقية رسميه" },
-    { id: "1-11", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين المشتركه" },
-    { id: "1-12", tier: "t1", tierName: "الدرجة الأولى", text: "مخالفة قوانين المشتركه المكررة" },
-    { id: "2-1", tier: "t2", tierName: "الدرجة الثانية", text: "تخطي المراجع" },
-    { id: "2-2", tier: "t2", tierName: "الدرجة الثانية", text: "دخول موجات غير معتمدة" },
-    { id: "2-3", tier: "t2", tierName: "الدرجة الثانية", text: "عدم التجاوب , إهمال التوجيهات في الراديو" },
-    { id: "2-4", tier: "t2", tierName: "الدرجة الثانية", text: "عدم الإلتزام بالعهدة العسكرية" },
-    { id: "2-5", tier: "t2", tierName: "الدرجة الثانية", text: "سجن شخص ( 20 شهر ) بدون اذن ضابط" },
-    { id: "2-6", tier: "t2", tierName: "الدرجة الثانية", text: "عدم الاتزام بالمظهر العسكري{ حلاقة الشعر-الوشوم -الخ..}" },
-    { id: "2-7", tier: "t2", tierName: "الدرجة الثانية", text: "عدم الالتزام بالأنظمة المرورية" },
-    { id: "2-8", tier: "t2", tierName: "الدرجة الثانية", text: "وضع حواجز او كشك بدون اذن" },
-    { id: "2-9", tier: "t2", tierName: "الدرجة الثانية", text: "تكرير طلب رتبة عالية بلا مبرر مقنع" },
-    { id: "2-10", tier: "t2", tierName: "الدرجة الثانية", text: "مخالفة قوانين تسجيل الدخول والخروج والبقاء في المركز" },
-    { id: "2-11", tier: "t2", tierName: "الدرجة الثانية", text: "استخدام المنشن بشكل خاطئ" },
-    { id: "2-12", tier: "t2", tierName: "الدرجة الثانية", text: "التأخر عن الاصطفاف" },
-    { id: "2-13", tier: "t2", tierName: "الدرجة الثانية", text: "مخالفه قوانين السجلات الجنائيه" },
-    { id: "2-15", tier: "t2", tierName: "الدرجة الثانية", text: "عدم الإلتزام بضوابط الراديو" },
-    { id: "2-16", tier: "t2", tierName: "الدرجة الثانية", text: "عدم ربط الفايف ام بالدسكورد" },
-    { id: "2-17", tier: "t2", tierName: "الدرجة الثانية", text: "اعطاء مخالفات غير مستحقه" },
-    { id: "2-18", tier: "t2", tierName: "الدرجة الثانية", text: "مخالفة قوانين رسائل حرس الحدود" },
-    { id: "2-19", tier: "t2", tierName: "الدرجة الثانية", text: "عدم سحب سلاح مستخدم" },
-    { id: "2-20", tier: "t2", tierName: "الدرجة الثانية", text: "رفع نداء استغاثه داخل نداء مسبق" },
-    { id: "2-21", tier: "t2", tierName: "الدرجة الثانية", text: "ارسال نموذج خاطئ" },
-    { id: "2-22", tier: "t2", tierName: "الدرجة الثانية", text: "تجاوز السرعه المحدده داخل الميناء" },
-    { id: "3-1", tier: "t3", tierName: "الدرجة الثالثة", text: "عدم التقيد بقواعد المطارادات" },
-    { id: "3-2", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفة قوانين الإعتقال أو التعامل مع المتهمين" },
-    { id: "3-3", tier: "t3", tierName: "الدرجة الثالثة", text: "سوء التعامل مع الحالات" },
-    { id: "3-4", tier: "t3", tierName: "الدرجة الثالثة", text: "الانسحاب قبل انتهاء الحاله" },
-    { id: "3-5", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفة قوانين التوجه إلى الحالات" },
-    { id: "3-6", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفة تعاميم أو قوانين حرس الحدود المحدثة" },
-    { id: "3-7", tier: "t3", tierName: "الدرجة الثالثة", text: "دخول موجه الرقابة دون اذن" },
-    { id: "3-8", tier: "t3", tierName: "الدرجة الثالثة", text: "التهرب من إستلام مركز العمليات او احد البوابات" },
-    { id: "3-9", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفه قوانين العمليات" },
-    { id: "3-10", tier: "t3", tierName: "الدرجة الثالثة", text: "التدخل في مهمات أو صلاحيات الغير بأي شكل من الأشكال" },
-    { id: "3-11", tier: "t3", tierName: "الدرجة الثالثة", text: "تسجيل دخول لمباشرة حالة ثم تسجيل خروجه" },
-    { id: "3-12", tier: "t3", tierName: "الدرجة الثالثة", text: "إضافة شروط الهروب الأمن غيرر المحددة ضمن التعميمات" },
-    { id: "3-13", tier: "t3", tierName: "الدرجة الثالثة", text: "طلق النار بطريقه غير نظاميه" },
-    { id: "3-14", tier: "t3", tierName: "الدرجة الثالثة", text: "تحرير الرهائن بدون اذن او الفشل في تحريرها" },
-    { id: "3-15", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفه قوانين المركبات" },
-    { id: "3-16", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفه قوانين السجن ( سجن غير صحيح )" },
-    { id: "3-17", tier: "t3", tierName: "الدرجة الثالثة", text: "ادخال حمولة مخالفة" },
-    { id: "3-18", tier: "t3", tierName: "الدرجة الثالثة", text: "ادخال حموله غير واقعيه" },
-    { id: "3-19", tier: "t3", tierName: "الدرجة الثالثة", text: "كشف هويه البحث الجنائي" },
-    { id: "3-20", tier: "t3", tierName: "الدرجة الثالثة", text: "الانسحاب من موقع التوجيه بدون اذن" },
-    { id: "3-21", tier: "t3", tierName: "الدرجة الثالثة", text: "عدم الإلتزام بضوابط التفاوض" },
-    { id: "3-22", tier: "t3", tierName: "الدرجة الثالثة", text: "مخالفة قوانين الاجازات" },
-    { id: "3-23", tier: "t3", tierName: "الدرجة الثالثة", text: "اسقاط مواطن اعزل" },
-    { id: "4-1", tier: "t4", tierName: "الدرجة الرابعة", text: "العبث بالعهدة العسكرية" },
-    { id: "4-2", tier: "t4", tierName: "الدرجة الرابعة", text: "التقصير في العمل الأداري أو الميداني" },
-    { id: "4-3", tier: "t4", tierName: "الدرجة الرابعة", text: "عدم الاتزام بالزي العسكري المحدد لرتبتك" },
-    { id: "4-4", tier: "t4", tierName: "الدرجة الرابعة", text: "عدم الجدية اثناء الداوم كعسكري" },
-    { id: "4-5", tier: "t4", tierName: "الدرجة الرابعة", text: "استخدام السلطة بغير حق" },
-    { id: "4-6", tier: "t4", tierName: "الدرجة الرابعة", text: "إهمال الرتب العليا للميدان" },
-    { id: "4-7", tier: "t4", tierName: "الدرجة الرابعة", text: "الاساءه لـ الشرطة العسكريه باي شكل من الاشكال" },
-    { id: "4-8", tier: "t4", tierName: "الدرجة الرابعة", text: "عدم احترام المواطنين" },
-    { id: "4-9", tier: "t4", tierName: "الدرجة الرابعة", text: "اهمال موقع المباشره" },
-    { id: "4-10", tier: "t4", tierName: "الدرجة الرابعة", text: "سجن شخص حكم عسكري" },
-    { id: "4-11", tier: "t4", tierName: "الدرجة الرابعة", text: "سحب اسلحة دون وجه حق" },
-    { id: "5-1", tier: "t5", tierName: "الدرجة الخامسة", text: "المناقشة أمام الأفراد" },
-    { id: "5-2", tier: "t5", tierName: "الدرجة الخامسة", text: "الكذب على المسؤولين" },
-    { id: "5-3", tier: "t5", tierName: "الدرجة الخامسة", text: "المجادلة في الموجه" },
-    { id: "5-4", tier: "t5", tierName: "الدرجة الخامسة", text: "مخالفة أمر مباشر او عدم انصياع لـ الأوامر" },
-    { id: "5-5", tier: "t5", tierName: "الدرجة الخامسة", text: "تخريب بالرتبة عسكرية" },
-    { id: "5-6", tier: "t5", tierName: "الدرجة الخامسة", text: "التلفظ على مواطن او الاساءه له باي شكل من الاشكال" },
-    { id: "5-7", tier: "t5", tierName: "الدرجة الخامسة", text: "مخالفة قوانين المصادرة سواء بالأخذ او بالتخزين" },
-    { id: "5-8", tier: "t5", tierName: "الدرجة الخامسة", text: "عدم تمثيل العسكري بصورة صحيحة بأي شكل من الأشكال" },
-    { id: "5-9", tier: "t5", tierName: "الدرجة الخامسة", text: "استخدام السلطة او الوظيفه للمصلحه الشخصيه" },
-    { id: "5-10", tier: "t5", tierName: "الدرجة الخامسة", text: "الاساءه لقطاعات اخرى باي شكل من الاشكال" },
-    { id: "5-12", tier: "t5", tierName: "الدرجة الخامسة", text: "التلاعب بالساعات والتأفيك" },
-    { id: "5-12", tier: "t5", tierName: "الدرجة الخامسة", text: "استخدام السنايبر بشكل خاطئ" },
-    { id: "6-1", tier: "t6", tierName: "الدرجة السادسة", text: "الترصد لزملائك بغاية الحقد سواء بسبب او بغير سبب" },
-    { id: "6-2", tier: "t6", tierName: "الدرجة السادسة", text: "عدم احترام الرتب العليا" },
-    { id: "6-3", tier: "t6", tierName: "الدرجة السادسة", text: "تخريب برتبة عسكرية" },
-    { id: "6-4", tier: "t6", tierName: "الدرجة السادسة", text: "الإساءة لحرس الحدود سواء خارج او داخل الرول بلاي أو بأي شكل من الأشكال" },
-    { id: "6-5", tier: "t6", tierName: "الدرجة السادسة", text: "تسريب معلومات او نسخ جداول حرس الحدود و نقلها الى سيرفرات اخرى" },
-    { id: "6-6", tier: "t6", tierName: "الدرجة السادسة", text: "فساد عسكري" },
-    { id: "6-7", tier: "t6", tierName: "الدرجة السادسة", text: "تزوير رتب" },
-    { id: "6-8", tier: "t6", tierName: "الدرجة السادسة", text: "الخروج من سيرفر الدسكورد بغرض اخفاء الرتب" },
-    { id: "7-1", tier: "t7", tierName: "الدرجة السابعة", text: "عدم تنفيذ الجزاء الذي عليك" },
-    { id: "7-2", tier: "t7", tierName: "الدرجة السابعة", text: "عدم تواجد لفترة طويلة" },
-    { id: "7-3", tier: "t7", tierName: "الدرجة السابعة", text: "عدم الانصياع لاوامر القادة" },
-    { id: "7-4", tier: "t7", tierName: "الدرجة السابعة", text: "التهرب الوظيفي" },
-    { id: "7-5", tier: "t7", tierName: "الدرجة السابعة", text: "عدم احترام القيادة" }
-];
-
-const penaltyMatrix = {
-    "جندي": { t1: "انذار شفوي + 100 الف", t2: "انذار شفوي + 150 الف", t3: "شفهي ثاني + 400 الف", t4: "شفهي اخير + 500 الف", t5: "وظيفي اول + 500 الف", t6: "وظيفي ثاني + مليون", t7: "تقديرية تصل الى الفصل من الخدمة" },
-    "جندي اول": { t1: "انذار شفوي + 150 الف", t2: "شفهي ثاني + 200 الف", t3: "شفهي اخير + 300 الف", t4: "وظيفي اول + 500 الف", t5: "وظيفي ثاني + 700 الف", t6: "وظيفي اخير + مليون", t7: "تقديرية تصل الى الفصل من الخدمة" },
-    "عريف + وكيل رقيب": { t1: "انذار شفوي + 250 الف", t2: "شفوي ثاني + 300 الف", t3: "شفوي اخير + 350 الف", t4: "وظيفي اول + 500 الف", t5: "وظيفي اخير + مليون", t6: "وظيفي اخير + مليونين", t7: "تقديرية تصل الى الفصل من الخدمة" },
-    "رقيب + رقيب اول": { t1: "انذار شفوي + 300 الف", t2: "شفهي ثاني + 350 الف", t3: "شفوي اخير + 400 الف", t4: "وظيفي ثاني + مليون", t5: "وظيفي اخير + مليون", t6: "وظيفي اخير + مليونين", t7: "تقديرية تصل الى الفصل من الخدمة" },
-    "رئيس رقباء": { t1: "شفهي ثاني + 400 الف", t2: "شفهي اخير + 500 الف", t3: "وظيفي اول + 500 الف", t4: "وظيفي اخير + مليون", t5: "وظيفي اخير + مليون", t6: "وظيفي اخير + مليونين", t7: "تقديرية تصل الى الفصل من الخدمة" },
-    "ملازم": { t1: "شفهي اخير + 500 الف", t2: "وظيفي اول + 500 الف", t3: "وظيفي ثاني + 700 الف", t4: "وظيفي اخير + مليون", t5: "وظيفي اخير + مليونين", t6: "وظيفي اخير + مليونين", t7: "تقديرية تصل الى الفصل من الخدمة" },
-    "ملازم اول": { t1: "شفهي اخير + 500 الف", t2: "وظيفي اول + 700 الف", t3: "وظيفي ثاني + مليون", t4: "وظيفي اخير + مليونين", t5: "تقديري ويُرفع للقيادة", t6: "تقديري ويُرفع للقيادة", t7: "تقديرية تصل الى الفصل من الخدمة" },
-    "نقيب فما فوق": { t1: "تقديري ويُرفع للقيادة", t2: "تقديري ويُرفع للقيادة", t3: "تقديري ويُرفع للقيادة", t4: "تقديري ويُرفع للقيادة", t5: "تقديري ويُرفع للقيادة", t6: "تقديري ويُرفع للقيادة", t7: "تقديرية تصل الى الفصل من الخدمة" }
-};
-
-const fixedViolations = [
-    { type: "fixed_1", id: "ثابت", text: "اعتراض على حكم صحيح", calc: (rank) => "انذار وظيفي أول + غرامه 500 الف" },
-    { type: "fixed_2", id: "ثابت", text: "عدم حضور استدعاء المحكمة بعد مرور 24 ساعه", calc: (rank) => "انذار شفهي + غرامه 500 الف + عقوبة المخالفه" },
-    { type: "fixed_3", id: "ثابت", text: "عدم حضور الاجتماع الدوري للقطاع", calc: (rank) => "تقديري من مسؤول الاجتماع" },
-    { type: "fixed_prison", id: "ثابت", text: "سجن مواطن لاي سبب غير exiting في اقل من 4:40 دقيقة", calc: (rank) => {
-        if (rank === "جندي" || rank === "جندي اول") return "شفهي اخير + 300 الف غرامة";
-        if (rank === "ملازم" || rank === "ملازم اول" || rank === "نقيب فما فوق") return "وظيفي ثاني + 1 مليون غرامة";
-        return "وظيفي اول + 300 الف غرامة";
-    }},
-    { type: "fixed_car", id: "ثابت", text: "إهمال المركبة العسكرية الميدانية", calc: (rank) => {
-        if (rank === "جندي" || rank === "جندي اول" || rank === "عريف + وكيل رقيب") return "غرامه 150 الف";
-        if (rank === "رقيب + رقيب اول" || rank === "رئيس رقباء") return "غرامه 250 الف";
-        return "غرامه 500 الف";
-    }}
-];
-
-let currentMode = 'standard';
-let currentTierFilter = 'all';
-let selectedItem = null;
-
-function switchTab(mode) {
-    currentMode = mode;
-    selectedItem = null;
-    document.getElementById('tabStandard').classList.toggle('active', mode === 'standard');
-    document.getElementById('tabFixed').classList.toggle('active', mode === 'fixed');
-    document.getElementById('tierFiltersContainer').style.display = (mode === 'standard') ? 'block' : 'none';
-    document.getElementById('listTitle').innerText = (mode === 'standard') ? '📋 اختر البند لتطبيق العقوبة فوراً:' : '⚖️ اختر المخالفة الثابتة:';
-    updateSystem();
-}
-
-function filterTier(tier, btn) {
-    currentTierFilter = tier;
-    document.querySelectorAll('.tier-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    updateSystem();
-}
-
-function updateSystem() {
-    const listContainer = document.getElementById('violationsList');
-    listContainer.innerHTML = '';
-    
-    const solInput = document.getElementById('soldierName').value.trim();
-    const jdgInput = document.getElementById('judgeName').value.trim();
-    
-    document.getElementById('resSoldier').innerText = solInput ? solInput : "لم يحدد بعد";
-    document.getElementById('resJudge').innerText = jdgInput ? jdgInput : "لم يحدد بعد";
-    
-    let dataSource = (currentMode === 'standard') ? standardViolations : fixedViolations;
-    
-    if (currentMode === 'standard') {
-        const searchTxt = document.getElementById('searchInput').value.trim().toLowerCase();
-        if (currentTierFilter !== 'all') {
-            dataSource = dataSource.filter(v => v.tier === currentTierFilter);
-        }
-        if (searchTxt !== '') {
-            dataSource = dataSource.filter(v => v.text.toLowerCase().includes(searchTxt) || v.id.includes(searchTxt));
-        }
-    }
-
-    if(dataSource.length === 0) {
-        listContainer.innerHTML = '<div style="padding:15px; color:var(--text-muted); text-align:center;">لا توجد نتائج مطابقة للبحث.</div>';
-        return;
-    }
-
-    dataSource.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'violation-item' + (selectedItem && selectedItem.text === item.text ? ' selected' : '');
-        div.onclick = () => {
-            selectedItem = item;
-            updateSystem();
-        };
-        
-        let label = (currentMode === 'standard') ? `بند ${item.id} (${item.tierName})` : 'مخالفة ثابتة';
-        div.innerHTML = `<span>${item.text}</span> <span class="violation-id">${label}</span>`;
-        listContainer.appendChild(div);
-    });
-
-    if (selectedItem) {
-        const currentRank = document.getElementById('rankSelect').value;
-        const isDoubled = document.getElementById('doubleCheck').checked;
-        let penaltyText = "";
-
-        if (currentMode === 'standard') {
-            penaltyText = penaltyMatrix[currentRank][selectedItem.tier];
-            if (selectedItem.tier === 't5' || selectedItem.tier === 't6') {
-                penaltyText += " + كسر رتبة";
-            }
-        } else {
-            penaltyText = selectedItem.calc(currentRank);
-        }
-
-        if (isDoubled) {
-            penaltyText = "⚠️ [عقوبة مضاعفة للتكرار]: " + penaltyText + " [تُدبل العقوبة والغرابة ×2]";
-        }
-
-        document.getElementById('resText').innerText = selectedItem.text;
-        document.getElementById('resId').innerText = (currentMode === 'standard') ? `بند (${selectedItem.id}) - ${selectedItem.tierName}` : "قوانين مخالفات ثابتة";
-        document.getElementById('resRank').innerText = currentRank;
-        document.getElementById('resPenalty').innerText = penaltyText;
-    } else {
-        document.getElementById('resText').innerText = "يرجى تحديد مخالفة من القائمة...";
-        document.getElementById('resId').innerText = "-";
-        document.getElementById('resRank').innerText = "-";
-        document.getElementById('resPenalty').innerText = "-";
-    }
-}
-
-// دالة النسخ المُعدلة حسب القالب الجديد لمجلس القضاء العسكري
-function copyToDiscord() {
-    if (!selectedItem) {
-        alert("🚨 يرجى اختيار مخالفة أولاً قبل النسخ!");
-        return;
-    }
-    const soldier = document.getElementById('resSoldier').innerText;
-    const bid = document.getElementById('resId').innerText;
-    const txt = document.getElementById('resText').innerText;
-    const pnl = document.getElementById('resPenalty').innerText;
-    const judge = document.getElementById('resJudge').innerText;
-
-    // توليد رقم ملف تحقيق عشوائي (بين 1000 و 9999)
-    const fileNumber = Math.floor(1000 + Math.random() * 9000);
-
-    // تنسيق الديسكورد الجديد لمجلس القضاء العسكري
-    const discordFormat = `تم فتح ملف تحقيق رقم : ${fileNumber}\n\n` +
-                          `\`هيئه التحقيق العسكري   :   \`  ${judge}\n\n` +
-                          `\` على العسكري :\`       ${soldier}\n\n` +
-                          `\`التهمة :  \`   ${txt} / ${bid}\n\n` +
-                          `\`تم سماع أقواله :  \`   لم يحضر الاستدعاء\n\n` +
-                          `\`أتضح لنا أنه :   مذنب / غير مذنب  \`  \n` +
-                          `يُرسل ملفنا هذا إلى <@&1305901086158225490>  لإصدار الحكم بحق المذكور أعلاه\n\n` +
-                          `\`الحكم المقترح:  \` ${pnl}`;
-
-    navigator.clipboard.writeText(discordFormat).then(() => {
-        alert("✅ تم نسخ ملف التحقيق للديسكورد بنجاح!");
-    });
-}
-
-// =================== نظام الحفظ والربط السحابي المؤمن بالتوكن ===================
-
-function saveToSystemRecords() {
-    const soldier = document.getElementById('soldierName').value.trim();
-    const rank = document.getElementById('rankSelect').value;
-    const durationDays = parseInt(document.getElementById('alertDuration').value);
-    const token = document.getElementById('securityToken').value.trim(); // جلب الرمز السري المتغير
-    
-    if (!soldier || !selectedItem) {
-        alert("🚨 خطأ: يجب إدخال اسم العسكري واختيار بند المخالفة من القائمة أولاً لحفظ الإنذار!");
-        return;
-    }
-
-    if (!token) {
-        alert("🚨 حظر أمني: يجب كتابة رمز صلاحية الشرطة العسكرية في حقل الأمان لحفظ التقرير!");
-        return;
-    }
-    
-    const penalty = document.getElementById('resPenalty').innerText;
-    const itemClassification = document.getElementById('resId').innerText;
-    
-    const registrationDate = new Date();
-    const expiryDate = new Date();
-    expiryDate.setDate(registrationDate.getDate() + durationDays);
-    
-    const regDateStr = registrationDate.toLocaleDateString('ar-EG');
-    const expDateStr = expiryDate.toLocaleDateString('ar-EG');
-    const recordId = Date.now();
-    
-    // بناء الرابط مشحوناً بالتوكن الأمني لحماية قاعدة البيانات من المخربين خارجيًا
-    const secureUrl = `${GOOGLE_SCRIPT_URL}?action=insert` +
-                      `&soldier=${encodeURIComponent(soldier)}` +
-                      `&rank=${encodeURIComponent(rank)}` +
-                      `&classification=${encodeURIComponent(itemClassification)}` +
-                      `&penalty=${encodeURIComponent(penalty)}` +
-                      `&regDate=${encodeURIComponent(regDateStr)}` +
-                      `&expDate=${encodeURIComponent(expDateStr)}` +
-                      `&id=${recordId}` +
-                      `&token=${encodeURIComponent(token)}`; // تمرير الرمز المكتوب للسيرفر
-    
-    fetch(secureUrl)
-    .then(response => response.json())
-    .then(res => {
-        if (res.status === "success") {
-            alert(`✅ تم إدراج العسكري (${soldier}) في السجل السحابي لجوجل بنجاح وتوثيق القضية!`);
-            document.getElementById('soldierName').value = "";
-            document.getElementById('securityToken').value = ""; // مسح خانة السر بعد النجاح لأمان أعلى
-            selectedItem = null;
-            updateSystem();
-            loadSystemRecords(); 
-        } else {
-            // في حال الرمز كان خطأ، جوجل سيعيد رسالة الخطأ هنا ويمنع الكتابة
-            alert("🚨 حظر أمني من السيرفر السحابي: " + res.error);
-        }
-    })
-    .catch(err => alert("🚨 فشل الاتصال بالسيرفر السحابي: " + err));
-}
-
-function loadSystemRecords() {
-    const tableBody = document.getElementById('recordsTableBody');
-    tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--accent); padding:15px;">🔄 جاري جلب ومزامنة البيانات السحابية الحية من جدول جوجل...</td></tr>`;
-    
-    fetch(GOOGLE_SCRIPT_URL)
-    .then(response => response.json())
-    .then(records => {
-        tableBody.innerHTML = '';
-        
-        if (!records || records.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:15px;">لا توجد قضايا أو إنذارات مسجلة سحابياً حتى الآن.</td></tr>`;
-            return;
-        }
-        
-        records.forEach(rec => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td style="font-weight:bold; color:#fff;">${rec.soldier}</td>
-                <td style="color:#60a5fa;">${rec.rank}</td>
-                <td style="color:var(--accent);">${rec.classification}</td>
-                <td>${rec.penalty}</td>
-                <td>${rec.regDate}</td>
-                <td>${rec.expDate}</td>
-                <td><span class="status-badge status-active">نشط سحابياً ☁️</span></td>
-                <td><a href="https://docs.google.com/spreadsheets/" target="_blank" style="color:#ef4444; text-decoration:none; font-size:12px; font-weight:bold;">تعديل بالإكسل 📊</a></td>
-            `;
-            tableBody.appendChild(tr);
-        });
-    }).catch(err => {
-        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:15px;">🚨 خطأ: لم نتمكن من جلب السجلات (تأكد من النشر للجميع Anyone أو انتظر ثواني).</td></tr>`;
-    });
-}
-
-updateSystem();
-loadSystemRecords();
-</script>
-
+    <script src="js/config.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
-

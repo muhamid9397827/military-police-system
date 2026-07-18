@@ -1785,6 +1785,21 @@ table.records-table tbody tr:last-child td {
   font-size: 0.85rem;
 }
 
+.footer-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.footer-copy p {
+  margin: 0;
+}
+
+.footer-copy small {
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .muted {
   color: var(--muted) !important;
 }

@@ -25,6 +25,12 @@
         sessionToken: "",
         serverNowMs: Date.now(),
         recordsUnlocked: false,
+        lookupRecords: [],
+        lookupRequestSequence: 0,
+        lookupCriteria: null,
+        cancelRecord: null,
+        cancelRequestId: "",
+        cancelSubmitting: false,
         refreshTimer: null,
         lastFocusedElement: null
     };
@@ -34,6 +40,7 @@
         appShell: document.querySelector(".app-shell"),
         investigatorName: byId("investigatorName"),
         accusedName: byId("accusedName"),
+        accusedDiscordId: byId("accusedDiscordId"),
         rankSelect: byId("rankSelect"),
         repeatOffense: byId("repeatOffense"),
         violationSearch: byId("violationSearch"),
@@ -46,6 +53,7 @@
         calculatorView: byId("calculatorView"),
         recordsView: byId("recordsView"),
         summaryAccused: byId("summaryAccused"),
+        summaryDiscordId: byId("summaryDiscordId"),
         summaryInvestigator: byId("summaryInvestigator"),
         summaryViolation: byId("summaryViolation"),
         summaryClassification: byId("summaryClassification"),
@@ -87,6 +95,26 @@
         recordsFeedback: byId("recordsFeedback"),
         refreshRecordsButton: byId("refreshRecordsButton"),
         lastSyncText: byId("lastSyncText"),
+        lookupForm: byId("lookupForm"),
+        lookupAccused: byId("lookupAccused"),
+        lookupAccusedError: byId("lookupAccusedError"),
+        lookupDiscordId: byId("lookupDiscordId"),
+        lookupDiscordIdError: byId("lookupDiscordIdError"),
+        lookupButton: byId("lookupButton"),
+        lookupFeedback: byId("lookupFeedback"),
+        lookupResult: byId("lookupResult"),
+        lookupActiveCount: byId("lookupActiveCount"),
+        lookupWarningList: byId("lookupWarningList"),
+        cancelWarningModal: byId("cancelWarningModal"),
+        closeCancelWarningButton: byId("closeCancelWarningButton"),
+        dismissCancelWarningButton: byId("dismissCancelWarningButton"),
+        cancelWarningForm: byId("cancelWarningForm"),
+        cancelCaseSummary: byId("cancelCaseSummary"),
+        cancelCourtMember: byId("cancelCourtMember"),
+        cancelCourtMemberError: byId("cancelCourtMemberError"),
+        cancelReason: byId("cancelReason"),
+        cancelReasonError: byId("cancelReasonError"),
+        confirmCancelWarningButton: byId("confirmCancelWarningButton"),
         appVersion: byId("appVersion")
     };
 
@@ -111,7 +139,12 @@
     }
 
     function bindEvents() {
-        [elements.investigatorName, elements.accusedName, elements.rankSelect].forEach(function (control) {
+        [
+            elements.investigatorName,
+            elements.accusedName,
+            elements.accusedDiscordId,
+            elements.rankSelect
+        ].forEach(function (control) {
             control.addEventListener("input", handleDraftChange);
             control.addEventListener("change", handleDraftChange);
         });
@@ -171,16 +204,28 @@
         });
 
         document.addEventListener("keydown", function (event) {
-            if (event.key === "Escape" && !elements.courtModal.hidden) {
-                closeCourtModal();
+            const openModal = getOpenModal();
+            if (!openModal) {
                 return;
             }
-            if (event.key === "Tab" && !elements.courtModal.hidden) {
-                trapModalFocus(event);
+            if (event.key === "Escape") {
+                if (openModal === elements.cancelWarningModal && state.cancelSubmitting) {
+                    return;
+                }
+                if (openModal === elements.courtModal) {
+                    closeCourtModal();
+                } else {
+                    closeCancelWarningModal();
+                }
+                return;
+            }
+            if (event.key === "Tab") {
+                trapModalFocus(event, openModal);
             }
         });
 
         elements.recordsUnlockForm.addEventListener("submit", unlockRecords);
+        elements.lookupForm.addEventListener("submit", lookupWarnings);
         elements.refreshRecordsButton.addEventListener("click", function () {
             loadRecords({ quiet: false }).catch(function () {
                 return undefined;
@@ -208,6 +253,16 @@
 
         elements.recordsTableBody.addEventListener("click", handleRecordAction);
         elements.recordsCards.addEventListener("click", handleRecordAction);
+        elements.lookupWarningList.addEventListener("click", handleRecordAction);
+
+        elements.closeCancelWarningButton.addEventListener("click", closeCancelWarningModal);
+        elements.dismissCancelWarningButton.addEventListener("click", closeCancelWarningModal);
+        elements.cancelWarningForm.addEventListener("submit", cancelWarning);
+        elements.cancelWarningModal.addEventListener("click", function (event) {
+            if (event.target === elements.cancelWarningModal && !state.cancelSubmitting) {
+                closeCancelWarningModal();
+            }
+        });
     }
 
     function switchMode(mode) {
@@ -362,11 +417,13 @@
         const item = getSelectedItem();
         const investigator = cleanText(elements.investigatorName.value);
         const accused = cleanText(elements.accusedName.value);
+        const accusedDiscordId = cleanText(elements.accusedDiscordId.value);
         const rank = elements.rankSelect.value;
         const penalty = item ? calculatePenalty(item) : "";
 
         elements.summaryInvestigator.textContent = investigator || "لم يحدد بعد";
         elements.summaryAccused.textContent = accused || "لم يحدد بعد";
+        elements.summaryDiscordId.textContent = accusedDiscordId || "لم يحدد بعد";
         elements.summaryRank.textContent = rank;
         elements.summaryViolation.textContent = item ? item.text : "اختر مخالفة من القائمة";
         elements.summaryClassification.textContent = item ? getClassification(item) : "لم يحدد بعد";
@@ -450,6 +507,7 @@
         clearDraftErrors();
         const investigator = cleanText(elements.investigatorName.value);
         const accused = cleanText(elements.accusedName.value);
+        const accusedDiscordId = cleanText(elements.accusedDiscordId.value);
         const item = getSelectedItem();
         let firstInvalid = null;
 
@@ -460,6 +518,14 @@
         if (!accused) {
             setFieldError("accusedName", "accusedError", "اكتب اسم المتهم العسكري");
             firstInvalid = firstInvalid || elements.accusedName;
+        }
+        if (!isDiscordId(accusedDiscordId)) {
+            setFieldError(
+                "accusedDiscordId",
+                "accusedDiscordIdError",
+                "معرف ديسكورد يجب أن يكون رقميًا من 15 إلى 22 خانة"
+            );
+            firstInvalid = firstInvalid || elements.accusedDiscordId;
         }
         if (!item) {
             showToast("اختر المخالفة من القائمة أولًا", "error");
@@ -475,6 +541,7 @@
             item: item,
             investigator: investigator,
             accused: accused,
+            accusedDiscordId: accusedDiscordId,
             rank: elements.rankSelect.value,
             matrixKey: elements.rankSelect.options[elements.rankSelect.selectedIndex].dataset.matrixKey,
             classification: getClassification(item),
@@ -522,6 +589,7 @@
         elements.courtSecurityToken.value = state.sessionToken;
         elements.courtCaseSummary.replaceChildren(
             summaryLine("المتهم", draft.accused),
+            summaryLine("معرف ديسكورد", draft.accusedDiscordId),
             summaryLine("المخالفة", draft.item.text),
             summaryLine("العقوبة المقترحة", draft.penalty)
         );
@@ -590,6 +658,7 @@
             investigator: draft.investigator,
             courtMember: courtMember,
             accused: draft.accused,
+            accusedDiscordId: draft.accusedDiscordId,
             rank: draft.rank,
             rankKey: draft.matrixKey,
             violationKey: draft.item.key,
@@ -652,6 +721,111 @@
         } finally {
             setButtonBusy(elements.unlockRecordsButton, false);
         }
+    }
+
+    async function lookupWarnings(event) {
+        event.preventDefault();
+        clearLookupErrors();
+
+        const accused = cleanText(elements.lookupAccused.value);
+        const discordId = cleanText(elements.lookupDiscordId.value);
+        let firstInvalid = null;
+
+        if (!accused) {
+            setLookupFieldError(elements.lookupAccused, elements.lookupAccusedError, "اكتب اسم العسكري");
+            firstInvalid = firstInvalid || elements.lookupAccused;
+        }
+        if (!isDiscordId(discordId)) {
+            setLookupFieldError(
+                elements.lookupDiscordId,
+                elements.lookupDiscordIdError,
+                "معرف ديسكورد يجب أن يكون رقميًا من 15 إلى 22 خانة"
+            );
+            firstInvalid = firstInvalid || elements.lookupDiscordId;
+        }
+        if (firstInvalid) {
+            firstInvalid.focus();
+            return;
+        }
+
+        try {
+            await runLookup(accused, discordId, { quiet: false });
+        } catch (error) {
+            showToast(readableError(error), "error");
+        }
+    }
+
+    async function runLookup(accused, discordId, options) {
+        const settings = options || {};
+        const requestSequence = ++state.lookupRequestSequence;
+        const token = state.sessionToken;
+        if (!token) {
+            throw new Error("رمز مجلس القضاء مطلوب");
+        }
+
+        if (!settings.quiet) {
+            setButtonBusy(elements.lookupButton, true, "جاري الاستعلام");
+        }
+        elements.lookupFeedback.textContent = "جاري البحث عن الإنذارات النشطة المطابقة للاسم والمعرف";
+
+        try {
+            const response = await callApi({
+                action: "lookup",
+                token: token,
+                accused: accused,
+                discordId: discordId
+            });
+
+            if (response.status !== "success") {
+                throw new Error(response.error || "تعذر تنفيذ الاستعلام");
+            }
+            if (requestSequence !== state.lookupRequestSequence) {
+                return { stale: true };
+            }
+
+            state.lookupCriteria = { accused: accused, discordId: discordId };
+            state.lookupRecords = Array.isArray(response.records) ? response.records : [];
+            elements.lookupActiveCount.textContent = String(
+                Number.isFinite(Number(response.activeCount))
+                    ? Number(response.activeCount)
+                    : state.lookupRecords.length
+            );
+            elements.lookupFeedback.textContent = state.lookupRecords.length
+                ? "تم العثور على الإنذارات النشطة المطابقة للاسم ومعرف ديسكورد"
+                : "لا توجد إنذارات نشطة مطابقة للاسم ومعرف ديسكورد";
+            elements.lookupResult.hidden = false;
+            renderLookupWarnings();
+            setConnectionState("online", "السجل متصل");
+            return response;
+        } catch (error) {
+            if (requestSequence !== state.lookupRequestSequence) {
+                return { stale: true };
+            }
+            elements.lookupResult.hidden = true;
+            elements.lookupFeedback.textContent = readableError(error);
+            setConnectionState("error", "تعذر تنفيذ الاستعلام");
+            if (isAuthorizationError(error)) {
+                lockRecordsView();
+            }
+            throw error;
+        } finally {
+            if (!settings.quiet && requestSequence === state.lookupRequestSequence) {
+                setButtonBusy(elements.lookupButton, false);
+            }
+        }
+    }
+
+    function renderLookupWarnings() {
+        const fragment = document.createDocumentFragment();
+        elements.lookupWarningList.replaceChildren();
+
+        state.lookupRecords.forEach(function (record) {
+            const card = buildRecordCard(record, "active");
+            card.classList.add("lookup-warning-card");
+            fragment.appendChild(card);
+        });
+
+        elements.lookupWarningList.appendChild(fragment);
     }
 
     async function loadRecords(options) {
@@ -735,12 +909,15 @@
                 record.reportNumber,
                 record.caseId,
                 record.accused,
+                getRecordDiscordId(record),
                 record.rank,
                 record.violationId,
                 record.violationText,
                 record.classification,
                 record.investigator,
-                record.courtMember
+                record.courtMember,
+                getCancelledBy(record),
+                record.cancelReason
             ].join(" ");
 
             return normalizeArabic(haystack).includes(query);
@@ -761,7 +938,7 @@
         if (!filtered.length) {
             const row = document.createElement("tr");
             const cell = document.createElement("td");
-            cell.colSpan = 10;
+            cell.colSpan = 11;
             cell.className = "empty-state";
             cell.textContent = query ? "لا توجد نتائج مطابقة للبحث" : getEmptyRecordsMessage();
             row.appendChild(cell);
@@ -788,6 +965,7 @@
 
     function buildRecordRow(record) {
         const row = document.createElement("tr");
+        const scope = state.recordsScope;
         const cells = [
             record.reportNumber || record.caseId || "غير محدد",
             record.accused || "غير محدد",
@@ -809,23 +987,29 @@
         });
 
         const statusCell = document.createElement("td");
-        statusCell.appendChild(buildStatusBadge(record));
+        statusCell.appendChild(buildStatusBadge(record, scope));
         row.appendChild(statusCell);
 
+        const archiveDetailsCell = document.createElement("td");
+        archiveDetailsCell.className = "archive-details-cell";
+        archiveDetailsCell.textContent = getArchiveDetailsText(record, scope);
+        row.appendChild(archiveDetailsCell);
+
         const actionCell = document.createElement("td");
-        actionCell.appendChild(buildCopyRecordButton(record));
+        actionCell.appendChild(buildRecordActions(record, scope));
         row.appendChild(actionCell);
         return row;
     }
 
-    function buildRecordCard(record) {
+    function buildRecordCard(record, scopeOverride) {
+        const scope = scopeOverride || state.recordsScope;
         const card = document.createElement("article");
         const head = document.createElement("div");
         const title = document.createElement("div");
         const name = document.createElement("strong");
         const number = document.createElement("span");
         const details = document.createElement("dl");
-        const action = buildCopyRecordButton(record);
+        const actions = buildRecordActions(record, scope);
 
         card.className = "record-card";
         head.className = "record-card-head";
@@ -833,17 +1017,24 @@
         name.textContent = record.accused || "غير محدد";
         number.textContent = `ملف ${record.reportNumber || record.caseId || "غير محدد"}`;
         title.append(name, number);
-        head.append(title, buildStatusBadge(record));
+        head.append(title, buildStatusBadge(record, scope));
         card.appendChild(head);
 
-        [
+        const detailPairs = [
+            ["معرف ديسكورد", getRecordDiscordId(record)],
             ["الرتبة", record.rank],
             ["المخالفة", record.violationText || record.classification],
             ["العقوبة", record.proposedPenalty || record.penalty],
             ["المحقق", record.investigator],
             ["التثبيت", formatDateTime(record.createdAtMs || record.createdAt)],
             ["الانتهاء", formatDateTime(record.expiresAtMs || record.expiresAt)]
-        ].forEach(function (pair) {
+        ];
+
+        if (scope === "archive") {
+            detailPairs.push(["تفاصيل الأرشفة", getArchiveDetailsText(record, scope)]);
+        }
+
+        detailPairs.forEach(function (pair) {
             const wrapper = document.createElement("div");
             const term = document.createElement("dt");
             const description = document.createElement("dd");
@@ -853,18 +1044,22 @@
             details.appendChild(wrapper);
         });
 
-        action.classList.add("record-card-action");
-        card.append(details, action);
+        actions.classList.add("record-card-action");
+        card.append(details, actions);
         return card;
     }
 
-    function buildStatusBadge(record) {
+    function buildStatusBadge(record, scopeOverride) {
         const badge = document.createElement("span");
+        const scope = scopeOverride || state.recordsScope;
         const expiry = getTimeValue(record.expiresAtMs || record.expiresAt);
-        const active = state.recordsScope === "active" &&
+        const active = scope === "active" &&
             expiry > (state.serverNowMs || Date.now());
 
-        if (state.recordsScope === "active" && !expiry) {
+        if (scope === "archive" && isRecordCancelled(record)) {
+            badge.className = "status-badge status-cancelled";
+            badge.textContent = "ملغي";
+        } else if (scope === "active" && !expiry) {
             badge.className = "status-badge status-error";
             badge.textContent = "يحتاج مراجعة";
         } else {
@@ -874,13 +1069,87 @@
         return badge;
     }
 
+    function getArchiveDetailsText(record, scope) {
+        if (scope !== "archive") {
+            return "—";
+        }
+        if (!isRecordCancelled(record)) {
+            return "انتهت مدة الإنذار وأُرشف تلقائيًا";
+        }
+
+        const actor = getCancelledBy(record) || "غير محدد";
+        const reason = cleanText(record.cancelReason || record.cancellationReason) || "غير محدد";
+        const cancelledAt = formatDateTime(
+            record.cancelledAtMs ||
+            record.canceledAtMs ||
+            record.cancelledAt ||
+            record.canceledAt
+        );
+        return `ألغاه ${actor}  السبب ${reason}  وقت الإلغاء ${cancelledAt}`;
+    }
+
+    function isRecordCancelled(record) {
+        const status = cleanText(
+            record.status ||
+            record.archiveStatus ||
+            record.archiveReason ||
+            ""
+        ).toUpperCase();
+        return status === "CANCELLED" ||
+            status === "CANCELED" ||
+            Boolean(
+                record.cancelledAtMs ||
+                record.canceledAtMs ||
+                record.cancelledAt ||
+                record.canceledAt
+            );
+    }
+
+    function getCancelledBy(record) {
+        return cleanText(
+            record.cancelledBy ||
+            record.canceledBy ||
+            record.cancelledByCourtMember ||
+            ""
+        );
+    }
+
+    function getRecordDiscordId(record) {
+        return cleanText(record.accusedDiscordId || record.discordId || "");
+    }
+
     function buildCopyRecordButton(record) {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "table-action";
         button.dataset.recordId = String(record.caseId || record.reportNumber || "");
+        button.dataset.recordAction = "copy";
         button.textContent = "نسخ التقرير";
         return button;
+    }
+
+    function buildCancelRecordButton(record) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "table-action table-action-danger";
+        button.dataset.recordId = String(record.caseId || "");
+        button.dataset.recordAction = "cancel";
+        button.textContent = "إلغاء الإنذار";
+        if (!record.caseId) {
+            button.disabled = true;
+            button.title = "معرف القضية غير متوفر";
+        }
+        return button;
+    }
+
+    function buildRecordActions(record, scope) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "record-actions";
+        wrapper.appendChild(buildCopyRecordButton(record));
+        if (scope === "active") {
+            wrapper.appendChild(buildCancelRecordButton(record));
+        }
+        return wrapper;
     }
 
     async function handleRecordAction(event) {
@@ -890,12 +1159,17 @@
         }
 
         const id = button.dataset.recordId;
-        const record = state.records.find(function (item) {
+        const record = state.records.concat(state.lookupRecords).find(function (item) {
             return String(item.caseId || item.reportNumber || "") === id;
         });
 
         if (!record) {
             showToast("تعذر العثور على بيانات القضية", "error");
+            return;
+        }
+
+        if (button.dataset.recordAction === "cancel") {
+            openCancelWarningModal(record);
             return;
         }
 
@@ -918,6 +1192,151 @@
             showToast("تم نسخ تقرير القضية", "success");
         } catch (error) {
             showToast("تعذر نسخ التقرير", "error");
+        }
+    }
+
+    function openCancelWarningModal(record) {
+        if (!record || !record.caseId) {
+            showToast("لا يمكن إلغاء إنذار لا يحتوي على معرف قضية", "error");
+            return;
+        }
+        if (state.cancelSubmitting) {
+            return;
+        }
+
+        state.cancelRecord = record;
+        state.cancelRequestId = createRequestId();
+        elements.cancelCourtMember.value = "";
+        elements.cancelReason.value = "";
+        elements.cancelCaseSummary.replaceChildren(
+            summaryLine("المتهم", record.accused || "غير محدد"),
+            summaryLine("معرف ديسكورد", getRecordDiscordId(record) || "غير محدد"),
+            summaryLine("رقم الملف", record.reportNumber || record.caseId),
+            summaryLine("العقوبة", record.proposedPenalty || record.penalty || "غير محدد")
+        );
+        clearCancelErrors();
+
+        state.lastFocusedElement = document.activeElement;
+        elements.cancelWarningModal.hidden = false;
+        elements.appShell.inert = true;
+        document.body.classList.add("modal-open");
+        window.requestAnimationFrame(function () {
+            elements.cancelCourtMember.focus();
+        });
+    }
+
+    function closeCancelWarningModal() {
+        if (state.cancelSubmitting) {
+            return;
+        }
+        elements.cancelWarningModal.hidden = true;
+        elements.appShell.inert = false;
+        document.body.classList.remove("modal-open");
+        state.cancelRecord = null;
+        state.cancelRequestId = "";
+        if (state.lastFocusedElement && typeof state.lastFocusedElement.focus === "function") {
+            state.lastFocusedElement.focus();
+        }
+    }
+
+    async function cancelWarning(event) {
+        event.preventDefault();
+        if (state.cancelSubmitting) {
+            return;
+        }
+
+        clearCancelErrors();
+        const record = state.cancelRecord;
+        const courtMember = cleanText(elements.cancelCourtMember.value);
+        const cancelReason = cleanText(elements.cancelReason.value);
+        let firstInvalid = null;
+
+        if (!record || !record.caseId) {
+            showToast("تعذر تحديد الإنذار المطلوب إلغاؤه", "error");
+            closeCancelWarningModal();
+            return;
+        }
+        if (!courtMember) {
+            setCancelFieldError(
+                elements.cancelCourtMember,
+                elements.cancelCourtMemberError,
+                "اكتب اسم عضو مجلس القضاء"
+            );
+            firstInvalid = firstInvalid || elements.cancelCourtMember;
+        }
+        if (cancelReason.length < 3) {
+            setCancelFieldError(
+                elements.cancelReason,
+                elements.cancelReasonError,
+                "اكتب سببًا واضحًا للإلغاء لا يقل عن ثلاثة أحرف"
+            );
+            firstInvalid = firstInvalid || elements.cancelReason;
+        }
+        if (!state.sessionToken) {
+            showToast("أعد فتح سجل مجلس القضاء قبل إلغاء الإنذار", "error");
+            closeCancelWarningModal();
+            lockRecordsView();
+            return;
+        }
+        if (firstInvalid) {
+            firstInvalid.focus();
+            return;
+        }
+
+        state.cancelSubmitting = true;
+        setButtonBusy(elements.confirmCancelWarningButton, true, "جاري الإلغاء");
+        elements.closeCancelWarningButton.disabled = true;
+        elements.dismissCancelWarningButton.disabled = true;
+        setConnectionState("loading", "جاري إلغاء الإنذار");
+
+        try {
+            const response = await callApi({
+                action: "cancel",
+                token: state.sessionToken,
+                caseId: String(record.caseId),
+                courtMember: courtMember,
+                cancelReason: cancelReason,
+                requestId: state.cancelRequestId
+            });
+            if (response.status !== "success") {
+                throw new Error(response.error || "تعذر إلغاء الإنذار");
+            }
+
+            state.cancelSubmitting = false;
+            closeCancelWarningModal();
+            setConnectionState("online", "تمت المزامنة");
+            showToast("تم إلغاء الإنذار ونقله إلى الأرشيف", "success");
+
+            const refreshTasks = [
+                loadRecords({ quiet: true }).catch(function () {
+                    return undefined;
+                })
+            ];
+            if (state.lookupCriteria) {
+                refreshTasks.push(
+                    runLookup(
+                        state.lookupCriteria.accused,
+                        state.lookupCriteria.discordId,
+                        { quiet: true }
+                    ).catch(function () {
+                        return undefined;
+                    })
+                );
+            }
+            await Promise.all(refreshTasks);
+        } catch (error) {
+            setConnectionState("error", "تعذر إلغاء الإنذار");
+            showToast(readableError(error), "error");
+            if (isAuthorizationError(error)) {
+                state.cancelSubmitting = false;
+                closeCancelWarningModal();
+                lockRecordsView();
+            }
+        } finally {
+            state.cancelSubmitting = false;
+            elements.closeCancelWarningButton.disabled = false;
+            elements.dismissCancelWarningButton.disabled = false;
+            setButtonBusy(elements.confirmCancelWarningButton, false);
         }
     }
 
@@ -1029,11 +1448,12 @@
     }
 
     function clearDraftErrors() {
-        ["investigatorName", "accusedName"].forEach(function (id) {
+        ["investigatorName", "accusedName", "accusedDiscordId"].forEach(function (id) {
             byId(id).removeAttribute("aria-invalid");
         });
         byId("investigatorError").textContent = "";
         byId("accusedError").textContent = "";
+        byId("accusedDiscordIdError").textContent = "";
     }
 
     function setFieldError(fieldId, errorId, message) {
@@ -1126,14 +1546,74 @@
 
     function lockRecordsView() {
         state.recordsRequestSequence += 1;
+        state.lookupRequestSequence += 1;
+        state.cancelSubmitting = false;
         state.recordsUnlocked = false;
         state.sessionToken = "";
         state.records = [];
+        state.lookupRecords = [];
+        state.lookupCriteria = null;
+        state.cancelRecord = null;
+        state.cancelRequestId = "";
         state.counts = { active: 0, archive: 0 };
         elements.recordsToken.value = "";
         elements.courtSecurityToken.value = "";
+        elements.recordsSearch.value = "";
+        elements.lookupAccused.value = "";
+        elements.lookupDiscordId.value = "";
+        elements.lookupActiveCount.textContent = "0";
+        elements.lookupResult.hidden = true;
+        elements.lookupFeedback.textContent = "";
+        elements.lookupWarningList.replaceChildren();
+        elements.recordsTableBody.replaceChildren();
+        elements.recordsCards.replaceChildren();
+        elements.recordsFeedback.textContent = "";
+        elements.activeCount.textContent = "0";
+        elements.expiringCount.textContent = "0";
+        elements.archiveCount.textContent = "0";
+        elements.cancelWarningModal.hidden = true;
+        elements.courtModal.hidden = true;
+        elements.cancelCaseSummary.replaceChildren();
+        elements.courtCaseSummary.replaceChildren();
+        elements.cancelCourtMember.value = "";
+        elements.cancelReason.value = "";
+        elements.closeCancelWarningButton.disabled = false;
+        elements.dismissCancelWarningButton.disabled = false;
+        setButtonBusy(elements.confirmCancelWarningButton, false);
+        elements.appShell.inert = false;
+        document.body.classList.remove("modal-open");
         elements.recordsContent.hidden = true;
         elements.recordsGate.hidden = false;
+    }
+
+    function clearLookupErrors() {
+        [
+            [elements.lookupAccused, elements.lookupAccusedError],
+            [elements.lookupDiscordId, elements.lookupDiscordIdError]
+        ].forEach(function (pair) {
+            pair[0].removeAttribute("aria-invalid");
+            pair[1].textContent = "";
+        });
+    }
+
+    function setLookupFieldError(field, errorElement, message) {
+        field.setAttribute("aria-invalid", "true");
+        errorElement.textContent = message;
+    }
+
+    function clearCancelErrors() {
+        [
+            [elements.cancelCourtMember, elements.cancelCourtMemberError],
+            [elements.cancelReason, elements.cancelReasonError]
+        ].forEach(function (pair) {
+            pair[0].removeAttribute("aria-invalid");
+            pair[1].textContent = "";
+        });
+    }
+
+    function setCancelFieldError(field, errorElement, message) {
+        field.setAttribute("aria-invalid", "true");
+        errorElement.textContent = message;
     }
 
     function clearCourtErrors() {
@@ -1153,8 +1633,18 @@
         errorElement.textContent = message;
     }
 
-    function trapModalFocus(event) {
-        const focusable = Array.from(elements.courtModal.querySelectorAll(
+    function getOpenModal() {
+        if (!elements.cancelWarningModal.hidden) {
+            return elements.cancelWarningModal;
+        }
+        if (!elements.courtModal.hidden) {
+            return elements.courtModal;
+        }
+        return null;
+    }
+
+    function trapModalFocus(event, modal) {
+        const focusable = Array.from(modal.querySelectorAll(
             "button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex='-1'])"
         )).filter(function (element) {
             return element.offsetParent !== null;
@@ -1178,6 +1668,10 @@
 
     function cleanText(value) {
         return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function isDiscordId(value) {
+        return /^\d{15,22}$/.test(String(value || "").trim());
     }
 
     function normalizeArabic(value) {

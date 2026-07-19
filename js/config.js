@@ -4,5 +4,5 @@ window.MP_CONFIG = Object.freeze({
     discordRoleMention: "<@&1305901086158225490>",
     defaultDurationDays: 7,
     refreshIntervalMs: 60000,
-    appVersion: "3.1.0"
+    appVersion: "3.2.0"
 });

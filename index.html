@@ -127,7 +127,26 @@
                                     <small class="field-error" id="accusedError"></small>
                                 </div>
 
-                                <div class="field field-full">
+                                <div class="field">
+                                    <label for="accusedDiscordId">معرف ديسكورد المتهم</label>
+                                    <input
+                                        id="accusedDiscordId"
+                                        name="accusedDiscordId"
+                                        type="text"
+                                        inputmode="numeric"
+                                        pattern="[0-9]{15,22}"
+                                        minlength="15"
+                                        maxlength="22"
+                                        autocomplete="off"
+                                        placeholder="انسخ معرف المستخدم الرقمي"
+                                        required
+                                        aria-describedby="accusedDiscordIdHint accusedDiscordIdError"
+                                    >
+                                    <small class="field-hint" id="accusedDiscordIdHint">Copy ID رقمي من 15 إلى 22 خانة</small>
+                                    <small class="field-error" id="accusedDiscordIdError"></small>
+                                </div>
+
+                                <div class="field">
                                     <label for="rankSelect">رتبة المتهم العسكري</label>
                                     <select id="rankSelect" name="rank" required>
                                         <option value="جندي" data-matrix-key="جندي">جندي</option>
@@ -224,6 +243,10 @@
                             <div>
                                 <dt>المتهم</dt>
                                 <dd id="summaryAccused">لم يحدد بعد</dd>
+                            </div>
+                            <div>
+                                <dt>معرف ديسكورد</dt>
+                                <dd id="summaryDiscordId">لم يحدد بعد</dd>
                             </div>
                             <div>
                                 <dt>المحقق</dt>
@@ -343,6 +366,63 @@
                             </article>
                         </div>
 
+                        <section class="lookup-panel" aria-labelledby="lookupTitle">
+                            <div class="section-heading">
+                                <span class="step-number" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" focusable="false">
+                                        <circle cx="11" cy="11" r="6.5"></circle>
+                                        <path d="m16 16 4 4"></path>
+                                    </svg>
+                                </span>
+                                <div>
+                                    <p class="section-kicker">استعلام مجلس القضاء</p>
+                                    <h3 id="lookupTitle">الاستعلام عن إنذارات عسكري</h3>
+                                    <p class="lookup-description">يعرض الإنذارات النشطة المطابقة للاسم ومعرف ديسكورد معًا</p>
+                                </div>
+                            </div>
+                            <form id="lookupForm" class="lookup-form" novalidate>
+                                <div class="field">
+                                    <label for="lookupAccused">اسم العسكري</label>
+                                    <input
+                                        id="lookupAccused"
+                                        type="text"
+                                        maxlength="80"
+                                        autocomplete="off"
+                                        required
+                                        aria-describedby="lookupAccusedError"
+                                    >
+                                    <small class="field-error" id="lookupAccusedError"></small>
+                                </div>
+                                <div class="field">
+                                    <label for="lookupDiscordId">معرف ديسكورد</label>
+                                    <input
+                                        id="lookupDiscordId"
+                                        type="text"
+                                        inputmode="numeric"
+                                        pattern="[0-9]{15,22}"
+                                        minlength="15"
+                                        maxlength="22"
+                                        autocomplete="off"
+                                        placeholder="Copy ID"
+                                        required
+                                        aria-describedby="lookupDiscordIdError"
+                                    >
+                                    <small class="field-error" id="lookupDiscordIdError"></small>
+                                </div>
+                                <button class="button button-primary lookup-submit" id="lookupButton" type="submit">
+                                    استعلام
+                                </button>
+                            </form>
+                            <div class="lookup-feedback" id="lookupFeedback" role="status" aria-live="polite"></div>
+                            <div class="lookup-result" id="lookupResult" hidden>
+                                <p class="lookup-count">
+                                    عدد الإنذارات النشطة
+                                    <strong id="lookupActiveCount">0</strong>
+                                </p>
+                                <div class="lookup-warning-list" id="lookupWarningList"></div>
+                            </div>
+                        </section>
+
                         <div class="records-toolbar">
                             <div class="segmented record-scope" role="group" aria-label="حالة السجل">
                                 <button
@@ -368,7 +448,7 @@
                                     id="recordsSearch"
                                     type="search"
                                     autocomplete="off"
-                                    placeholder="ابحث بالاسم أو رقم الملف أو البند"
+                                    placeholder="ابحث بالاسم أو معرف ديسكورد أو رقم الملف أو البند"
                                 >
                             </div>
                         </div>
@@ -388,6 +468,7 @@
                                         <th scope="col">تاريخ التثبيت</th>
                                         <th scope="col">تاريخ الانتهاء</th>
                                         <th scope="col">الحالة</th>
+                                        <th scope="col">تفاصيل الأرشفة</th>
                                         <th scope="col">الإجراء</th>
                                     </tr>
                                 </thead>
@@ -501,6 +582,74 @@
                     <button class="button button-ghost" id="cancelCourtButton" type="button">إلغاء</button>
                     <button class="button button-court" id="confirmCourtButton" type="submit">
                         اعتماد وتثبيت الإنذار
+                    </button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <div class="modal-backdrop" id="cancelWarningModal" hidden>
+        <section
+            class="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancelWarningTitle"
+            aria-describedby="cancelWarningDescription"
+        >
+            <div class="modal-header">
+                <div>
+                    <p class="section-kicker">إجراء محمي ومسجل</p>
+                    <h2 id="cancelWarningTitle">إلغاء الإنذار</h2>
+                </div>
+                <button class="icon-button" id="closeCancelWarningButton" type="button" aria-label="إغلاق">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="m6 6 12 12M18 6 6 18"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <p id="cancelWarningDescription" class="modal-description">
+                سينتقل الإنذار إلى الأرشيف ويظهر اسم عضو المجلس وسبب الإلغاء ووقته
+            </p>
+
+            <div class="court-case-summary" id="cancelCaseSummary"></div>
+
+            <form id="cancelWarningForm" novalidate>
+                <div class="field-grid">
+                    <div class="field">
+                        <label for="cancelCourtMember">اسم عضو مجلس القضاء</label>
+                        <input
+                            id="cancelCourtMember"
+                            type="text"
+                            maxlength="80"
+                            autocomplete="off"
+                            required
+                            aria-describedby="cancelCourtMemberError"
+                        >
+                        <small class="field-error" id="cancelCourtMemberError"></small>
+                    </div>
+                    <div class="field field-full">
+                        <label for="cancelReason">سبب إلغاء الإنذار</label>
+                        <textarea
+                            id="cancelReason"
+                            rows="4"
+                            minlength="3"
+                            maxlength="300"
+                            required
+                            aria-describedby="cancelReasonError"
+                        ></textarea>
+                        <small class="field-error" id="cancelReasonError"></small>
+                    </div>
+                </div>
+
+                <div class="modal-note">
+                    لا يحذف الإنذار نهائيًا بل يُحفظ في الأرشيف بصفته ملغيًا
+                </div>
+
+                <div class="modal-actions">
+                    <button class="button button-ghost" id="dismissCancelWarningButton" type="button">رجوع</button>
+                    <button class="button button-danger" id="confirmCancelWarningButton" type="submit">
+                        تأكيد إلغاء الإنذار
                     </button>
                 </div>
             </form>
